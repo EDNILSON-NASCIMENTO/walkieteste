@@ -6,7 +6,12 @@ import os
 
 auth_bp = Blueprint('auth', __name__)
 
-SECRET_KEY = os.environ.get('SECRET_KEY', 'asdf#FGSgvasgf$5$WGT')
+# SECRET_KEY = os.environ.get('SECRET_KEY', 'asdf#FGSgvasgf$5$WGT')
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    # Em um ambiente de produção, é crucial que essa variável esteja definida.
+    # O programa irá falhar se não a encontrar, o que é um comportamento seguro.
+    raise ValueError("A variável de ambiente SECRET_KEY não foi definida.")
 
 def generate_token(user_id):
     """Gera um token JWT para o usuário"""

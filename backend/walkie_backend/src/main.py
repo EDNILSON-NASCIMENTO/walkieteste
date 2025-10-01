@@ -12,6 +12,7 @@ from src.routes.walks import walks_bp
 from src.routes.gamification import gamification_bp
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
+
 app.config['SECRET_KEY'] = 'asdf#FGSgvasgf$5$WGT'
 
 # Configurar CORS para permitir requisições do frontend
@@ -25,7 +26,19 @@ app.register_blueprint(gamification_bp, url_prefix='/api/gamification')
 
 # Configuração do banco de dados para MySQL
 # ATENÇÃO: A senha está exposta no código. Em produção, use variáveis de ambiente.
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:1234@localhost/walkie_db'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:1234@localhost/walkie_db'
+
+import os
+
+# Railway injeta a variável DATABASE_URL automaticamente.
+# Este código a lê e a adapta para o SQLAlchemy.
+db_url = os.environ.get('DATABASE_URL')
+if db_url:
+    # A URL do Railway vem como "mysql://...", o SQLAlchemy precisa de "mysql+mysqlconnector://..."
+    db_url = db_url.replace("mysql://", "mysql+mysqlconnector://", 1)
+
+# Usa a URL do Railway ou, se não encontrar, usa a local para desenvolvimento.
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url or 'mysql+mysqlconnector://root:1234@localhost/walkie_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
