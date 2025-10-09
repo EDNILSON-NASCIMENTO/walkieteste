@@ -1,8 +1,6 @@
 import os
 import sys
-# DON'T CHANGE THIS !!!
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-
+from dotenv import load_dotenv
 from flask import Flask, send_from_directory
 from flask_cors import CORS
 from src.models.models import db
@@ -11,11 +9,18 @@ from src.routes.users import users_bp
 from src.routes.walks import walks_bp
 from src.routes.gamification import gamification_bp
 
+# Carrega as variáveis de ambiente do arquivo .env
+load_dotenv()
+
+# DON'T CHANGE THIS !!!
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
 
-app.config['SECRET_KEY'] = 'asdf#FGSgvasgf$5$WGT'
+# Pega a SECRET_KEY do ambiente ou usa um valor padrão
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default_secret_key_for_dev')
 
-# Configurar CORS para permitir requisições do frontend
+# Configurar CORS
 CORS(app, origins=['*'])
 
 # Registrar blueprints
@@ -24,29 +29,22 @@ app.register_blueprint(users_bp, url_prefix='/api/users')
 app.register_blueprint(walks_bp, url_prefix='/api/walks')
 app.register_blueprint(gamification_bp, url_prefix='/api/gamification')
 
-# Configuração do banco de dados para MySQL
-# ATENÇÃO: A senha está exposta no código. Em produção, use variáveis de ambiente.
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:1234@localhost/walkie_db'
+# --- CONFIGURAÇÃO CORRETA DO BANCO DE DADOS ---
+# Pega as credenciais do arquivo .env
+db_user = os.getenv('DB_USER')
+db_password = os.getenv('DB_PASSWORD')
+db_host = os.getenv('DB_HOST')
+db_name = os.getenv('DB_NAME')
 
-import os
-
-# Railway injeta a variável DATABASE_URL automaticamente.
-# Este código a lê e a adapta para o SQLAlchemy.
-db_url = os.environ.get('DATABASE_URL')
-if db_url:
-    # A URL do Railway vem como "mysql://...", o SQLAlchemy precisa de "mysql+mysqlconnector://..."
-    db_url = db_url.replace("mysql://", "mysql+mysqlconnector://", 1)
-
-# Usa a URL do Railway ou, se não encontrar, usa a local para desenvolvimento.
-app.config['SQLALCHEMY_DATABASE_URI'] = db_url or 'mysql+mysqlconnector://root:1234@localhost/walkie_db'
+# Monta a string de conexão do banco de dados
+app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}/{db_name}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
 # Criar tabelas e popular dados iniciais
 with app.app_context():
     db.create_all()
-    
-    # Verificar se é a primeira execução e popular dados iniciais
+
     from src.models.models import Badge
     if Badge.query.count() == 0:
         from src.utils.seed_data import seed_all
