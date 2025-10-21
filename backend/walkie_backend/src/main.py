@@ -1,6 +1,21 @@
 import os
 import sys
+# --- INÍCIO DA CORREÇÃO ---
+
+# 1. Define o caminho raiz do projeto (a pasta 'walkie_backend', que está um nível acima de 'src')
+PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
+
+# 2. Adiciona a raiz do projeto ao sys.path para que 'from src...' funcione
+sys.path.insert(0, PROJECT_ROOT)
+
 from dotenv import load_dotenv
+
+# 3. Define o caminho exato do arquivo .env (que está na raiz)
+dotenv_path = os.path.join(PROJECT_ROOT, '.env')
+
+# 4. Carrega o .env ANTES de qualquer outra importação do projeto
+load_dotenv(dotenv_path=dotenv_path)
+
 from flask import Flask, send_from_directory
 from flask_cors import CORS
 from src.models.models import db
@@ -12,8 +27,7 @@ from src.routes.gamification import gamification_bp
 # Carrega as variáveis de ambiente do arquivo .env
 load_dotenv()
 
-# DON'T CHANGE THIS !!!
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
 

@@ -37,17 +37,37 @@ const Pets = () => {
     fetchPets();
   }, []);
 
+  // --- INÍCIO DA CORREÇÃO ---
   const fetchPets = async () => {
+    // Limpa erros anteriores e garante que pets seja um array
+    setError('');
+    setPets([]);
+    setLoading(true); // Garante o estado de loading
+
     try {
       const response = await axios.get('/api/users/pets');
-      setPets(response.data);
+
+      // Verificação crucial:
+      // Garante que o estado 'pets' só será atualizado se a resposta for um array
+      if (Array.isArray(response.data)) {
+        setPets(response.data);
+      } else {
+        // Se a API retornar algo inesperado (null, {}, etc.), 
+        // loga um aviso e mantém 'pets' como um array vazio.
+        console.warn('A API /api/users/pets não retornou um array:', response.data);
+        setPets([]);
+      }
+
     } catch (error) {
       console.error('Erro ao carregar pets:', error);
-      setError('Erro ao carregar pets');
+      setError(error.response?.data?.error || 'Erro ao carregar pets');
+      // Garante que 'pets' seja um array vazio em caso de erro
+      setPets([]); 
     } finally {
       setLoading(false);
     }
   };
+  // --- FIM DA CORREÇÃO ---
 
   const handleChange = (e) => {
     setFormData({
@@ -367,4 +387,3 @@ const Pets = () => {
 };
 
 export default Pets;
-
