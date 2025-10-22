@@ -1,21 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Polyline } from 'react-leaflet'; // 'useMap' removido (não estava em uso)
 import axios from 'axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  MapPin, 
-  Play, 
-  Pause, 
-  Square, 
-  Clock, 
+
+// --- CORREÇÃO APLICADA AQUI ---
+// Removidos caracteres de espaço inválidos que quebravam a importação
+import {
+  MapPin,
+  Play,
+  Pause,
+  Square,
+  Clock,
   Route,
   Zap,
   AlertTriangle,
   Heart
 } from 'lucide-react';
+// --- FIM DA CORREÇÃO ---
+
 import 'leaflet/dist/leaflet.css';
 
 // Fix para ícones do Leaflet
@@ -451,4 +456,3 @@ const Walk = () => {
 };
 
 export default Walk;
-
