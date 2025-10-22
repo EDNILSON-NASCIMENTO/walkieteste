@@ -82,6 +82,20 @@ const Pets = () => {
     setError('');
     setMessage('');
 
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('Usuário não autenticado. Faça login novamente.');
+      setSaving(false);
+      return;
+    }
+
+    // 2. Criar o cabeçalho de autorização
+    const config = {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    };
+
     try {
       if (editingPet) {
         await axios.put(`/api/users/pets/${editingPet.id}`, formData);
