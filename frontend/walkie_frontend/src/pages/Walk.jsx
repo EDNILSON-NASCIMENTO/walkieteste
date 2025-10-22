@@ -63,9 +63,29 @@ const Walk = () => {
     };
   }, []);
 
+  // Em src/pages/Walk.jsx
+
   const fetchPets = async () => {
     try {
-      const response = await axios.get('/api/users/pets');
+      // --- CORREÇÃO ADICIONADA AQUI ---
+      // 1. Obter o token do localStorage
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        setError('Usuário não autenticado');
+        // Você pode querer redirecionar para o login aqui
+        // ex: navigate('/login');
+        return;
+      }
+
+      // 2. Adicionar o token no header da requisição
+      const response = await axios.get('/api/users/pets', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      // --- FIM DA CORREÇÃO ---
+
       setPets(response.data);
     } catch (error) {
       console.error('Erro ao carregar pets:', error);
