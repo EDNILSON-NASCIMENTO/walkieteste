@@ -22,7 +22,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const response = await axios.get('/api/users/dashboard');
+        const response = await axios.get('/users/dashboard');
         setDashboardData(response.data);
       } catch (error) {
         console.error('Erro ao carregar dashboard:', error);

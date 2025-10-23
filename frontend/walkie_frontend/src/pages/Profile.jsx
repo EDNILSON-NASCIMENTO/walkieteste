@@ -33,7 +33,7 @@ const Profile = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await axios.get('/api/users/profile');
+        const response = await axios.get('/users/profile');
         setProfile(response.data);
         setFormData({
           name: response.data.name || '',
@@ -63,7 +63,7 @@ const Profile = () => {
     setMessage('');
 
     try {
-      const response = await axios.put('/api/users/profile', formData);
+      const response = await axios.put('/users/profile', formData);
       setProfile(response.data.user);
       updateUser(response.data.user);
       setEditing(false);

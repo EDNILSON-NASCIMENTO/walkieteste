@@ -60,7 +60,7 @@ const Walk = () => {
 
   const fetchPets = async () => {
     try {
-      const response = await axios.get('/api/users/pets');
+      const response = await axios.get('/users/pets');
       setPets(response.data);
     } catch (error) {
       console.error('Erro ao carregar pets:', error);
@@ -118,7 +118,7 @@ const Walk = () => {
     setError('');
 
     try {
-      const response = await axios.post('/api/walks/start', {
+      const response = await axios.post('/walks/start', {
         pet_id: parseInt(selectedPet)
       });
 
@@ -206,7 +206,7 @@ const Walk = () => {
     setLoading(true);
 
     try {
-      await axios.put(`/api/walks/finish/${currentWalk.id}`, {
+      await axios.put(`/walks/finish/${currentWalk.id}`, {
         route_data: route
       });
 

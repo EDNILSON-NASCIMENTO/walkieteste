@@ -30,9 +30,9 @@ const Ranking = () => {
     setLoading(true);
     try {
       const [rankingRes, badgesRes, challengesRes] = await Promise.all([
-        axios.get(`/api/gamification/ranking?period=${selectedPeriod}`),
-        axios.get('/api/gamification/badges'),
-        axios.get('/api/gamification/challenges')
+        axios.get(`/gamification/ranking?period=${selectedPeriod}`),
+        axios.get('/gamification/badges'),
+        axios.get('/gamification/challenges')
       ]);
 
       setRanking(rankingRes.data);

@@ -45,7 +45,7 @@ const Pets = () => {
     setLoading(true); // Garante o estado de loading
 
     try {
-      const response = await axios.get('/api/users/pets');
+      const response = await axios.get('/users/pets');
 
       // Verificação crucial:
       // Garante que o estado 'pets' só será atualizado se a resposta for um array
@@ -84,10 +84,10 @@ const Pets = () => {
 
     try {
       if (editingPet) {
-        await axios.put(`/api/users/pets/${editingPet.id}`, formData);
+        await axios.put(`/users/pets/${editingPet.id}`, formData);
         setMessage('Pet atualizado com sucesso!');
       } else {
-        await axios.post('/api/users/pets', formData);
+        await axios.post('/users/pets', formData);
         setMessage('Pet cadastrado com sucesso!');
       }
       
@@ -119,7 +119,7 @@ const Pets = () => {
     }
 
     try {
-      await axios.delete(`/api/users/pets/${petId}`);
+      await axios.delete(`/users/pets/${petId}`);
       setMessage('Pet removido com sucesso!');
       await fetchPets();
     } catch (error) {
