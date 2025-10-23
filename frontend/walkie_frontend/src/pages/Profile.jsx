@@ -79,46 +79,49 @@ const Profile = () => {
     }
   };
 
+  // 
+  // Em Profile.jsx
+
   const handleSave = async () => {
     setSaving(true);
     setError('');
     setMessage('');
-    let updatedUser = profile; // Guarda o usuário atualizado
+    let updatedUser = profile; 
 
     try {
-      // ETAPA 1: Fazer upload da imagem (se uma nova foi selecionada)
+      // ETAPA 1: Fazer upload da imagem
       if (selectedFile) {
         const uploadFormData = new FormData();
         uploadFormData.append('profile_picture', selectedFile);
 
-        // Envia o arquivo para a nova rota de upload
         const uploadResponse = await axios.post(
           '/users/profile/upload', 
           uploadFormData, 
-          {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          }
+          { headers: { 'Content-Type': 'multipart/form-data' } }
         );
-        updatedUser = uploadResponse.data.user; // Pega o usuário com a nova URL
-        setSelectedFile(null); // Limpa o arquivo selecionado
+        updatedUser = uploadResponse.data.user; 
+        setSelectedFile(null); 
       }
 
-      // ETAPA 2: Salvar os dados de texto (como o nome)
-      // Envia os dados de texto para a rota de atualização do perfil
+      // ETAPA 2: Salvar os dados de texto
       const response = await axios.put('/users/profile', formData);
-      updatedUser = response.data.user; // Pega a atualização final (com o nome)
+      updatedUser = response.data.user; 
 
       // Atualiza tudo
       setProfile(updatedUser);
       updateUser(updatedUser);
       setEditing(false);
+      
+      // --- CORREÇÃO AQUI ---
+      // Limpa o preview local (blob:) e força o <img> 
+      // a usar a nova URL do 'updatedUser'
+      setImagePreview(updatedUser.profile_picture || null); 
+      // --- FIM DA CORREÇÃO ---
+
       setMessage('Perfil atualizado com sucesso!');
       
     } catch (error) {
       setError(error.response?.data?.error || 'Erro ao atualizar perfil');
-      // Se deu erro, reverte o preview para a imagem antiga
       setImagePreview(profile?.profile_picture || null);
     } finally {
       setSaving(false);

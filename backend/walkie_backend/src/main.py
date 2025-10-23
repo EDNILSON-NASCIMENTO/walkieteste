@@ -25,8 +25,8 @@ from src.routes.walks import walks_bp
 from src.routes.gamification import gamification_bp
 
 # Carrega as variáveis de ambiente do arquivo .env
-load_dotenv()
-
+# Esta linha é redundante por causa da linha 4, mas não causa problema.
+load_dotenv() 
 
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
@@ -34,8 +34,26 @@ app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'sta
 # Pega a SECRET_KEY do ambiente ou usa um valor padrão
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default_secret_key_for_dev')
 
-# Configurar CORS
-CORS(app, origins=['*'])
+# --- INÍCIO DA CORREÇÃO CORS ---
+# Substitua a linha 'CORS(app, origins=['*'])' por este bloco
+
+# Lista de origens permitidas (seu frontend de desenvolvimento)
+origins = [
+    # "http://localhost:5173"
+    # Quando você for para produção, adicione a URL do seu site aqui
+    # Ex: "https://seusite.com"
+    "https://clubwalkie.com",
+]
+
+CORS(
+    app, 
+    origins=origins, 
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"], # Permite todos os métodos
+    allow_headers=["Authorization", "Content-Type"],   # Permite os headers que você precisa
+    supports_credentials=True
+)
+# --- FIM DA CORREÇÃO CORS ---
+
 
 # Registrar blueprints
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -79,6 +97,30 @@ def serve(path):
             return send_from_directory(static_folder_path, 'index.html')
         else:
             return "index.html not found", 404
+            
+# --- (NOVO) Rota Estática para Uploads de Perfil ---
+# @app.route('/static/uploads/profiles/<filename>')
+# def uploaded_profile_file(filename):
+#     upload_dir = os.path.join(app.root_path, 'static', 'uploads', 'profiles')
+#     return send_from_directory(upload_dir, filename)
+
+# # --- (NOVO) Rota Estática para Uploads de Pet ---
+# @app.route('/static/uploads/pets/<filename>')
+# def uploaded_pet_file(filename):
+#     upload_dir = os.path.join(app.root_path, 'static', 'uploads', 'pets')
+#     return send_from_directory(upload_dir, filename)
+@app.route('/static/uploads/profiles/<filename>')
+def uploaded_profile_file(filename):
+    # CORREÇÃO: Sobe um nível para sair do 'src'
+    upload_dir = os.path.join(os.path.dirname(app.root_path), 'static', 'uploads', 'profiles')
+    return send_from_directory(upload_dir, filename)
+
+# --- (NOVO) Rota Estática para Uploads de Pet ---
+@app.route('/static/uploads/pets/<filename>')
+def uploaded_pet_file(filename):
+    # CORREÇÃO: Sobe um nível para sair do 'src'
+    upload_dir = os.path.join(os.path.dirname(app.root_path), 'static', 'uploads', 'pets')
+    return send_from_directory(upload_dir, filename)
 
 @app.route('/api/health', methods=['GET'])
 def health_check():

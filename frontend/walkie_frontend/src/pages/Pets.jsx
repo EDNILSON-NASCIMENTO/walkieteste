@@ -21,14 +21,21 @@ const Pets = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingPet, setEditingPet] = useState(null);
+  
+  // Estado para os dados de TEXTO do formulário
   const [formData, setFormData] = useState({
     name: '',
     breed: '',
     age: '',
     weight: '',
-    profile_picture: '',
     preferences: ''
+    // profile_picture foi removido daqui
   });
+
+  // (NOVO) States para gerenciar o upload da imagem
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -37,23 +44,18 @@ const Pets = () => {
     fetchPets();
   }, []);
 
-  // --- CORREÇÃO NA FUNÇÃO fetchPets ---
   const fetchPets = async () => {
     setError('');
     setPets([]);
     setLoading(true);
-
     try {
-      // CORREÇÃO: Removido o '/api'
       const response = await axios.get('/users/pets'); 
-
       if (Array.isArray(response.data)) {
         setPets(response.data);
       } else {
         console.warn('A API /api/users/pets não retornou um array:', response.data);
         setPets([]);
       }
-
     } catch (error) {
       console.error('Erro ao carregar pets:', error);
       setError(error.response?.data?.error || 'Erro ao carregar pets');
@@ -62,8 +64,8 @@ const Pets = () => {
       setLoading(false);
     }
   };
-  // --- FIM DA CORREÇÃO ---
 
+  // Handler para mudanças em inputs de TEXTO
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -71,7 +73,34 @@ const Pets = () => {
     });
   };
 
-  // --- CORREÇÃO NA FUNÇÃO handleSubmit ---
+  // (NOVO) Handler para mudanças em inputs de ARQUIVO
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      // Cria uma URL local temporária para o preview
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  // (NOVO) Função helper para fazer o upload da imagem
+  const uploadPetImage = async (petId, file) => {
+    const uploadFormData = new FormData();
+    uploadFormData.append('profile_picture', file);
+
+    // Envia o arquivo para a nova rota de upload
+    await axios.post(
+      `/users/pets/${petId}/upload`, 
+      uploadFormData, 
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+  };
+
+  // (ATUALIZADO) handleSubmit com lógica de 2 etapas
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -79,47 +108,72 @@ const Pets = () => {
     setMessage('');
 
     try {
+      // 1. Prepara os dados de TEXTO
+      const textData = {
+        name: formData.name,
+        breed: formData.breed,
+        age: formData.age || null,
+        weight: formData.weight || null,
+        preferences: formData.preferences,
+      };
+
       if (editingPet) {
-        // CORREÇÃO: Removido o '/api'
-        await axios.put(`/users/pets/${editingPet.id}`, formData);
+        // --- LÓGICA DE ATUALIZAÇÃO ---
+        // 2a. Envia os dados de TEXTO
+        await axios.put(`/users/pets/${editingPet.id}`, textData);
+        
+        // 3a. Se houver arquivo, envia a IMAGEM
+        if (selectedFile) {
+          await uploadPetImage(editingPet.id, selectedFile);
+        }
         setMessage('Pet atualizado com sucesso!');
+        
       } else {
-        // CORREÇÃO: Removido o '/api'
-        await axios.post('/users/pets', formData);
+        // --- LÓGICA DE CRIAÇÃO ---
+        // 2b. Envia os dados de TEXTO
+        const response = await axios.post('/users/pets', textData);
+        const newPetId = response.data.pet.id; // Pega o ID do pet recém-criado
+        
+        // 3b. Se houver arquivo, envia a IMAGEM
+        if (selectedFile) {
+          await uploadPetImage(newPetId, selectedFile);
+        }
         setMessage('Pet cadastrado com sucesso!');
       }
       
+      // 4. Recarrega a lista e limpa o formulário
       await fetchPets();
       handleCancel();
+
     } catch (error) {
       setError(error.response?.data?.error || 'Erro ao salvar pet');
     } finally {
       setSaving(false);
     }
   };
-  // --- FIM DA CORREÇÃO ---
 
+  // (ATUALIZADO) handleEdit
   const handleEdit = (pet) => {
     setEditingPet(pet);
+    // Preenche o form só com dados de texto
     setFormData({
       name: pet.name || '',
       breed: pet.breed || '',
       age: pet.age?.toString() || '',
       weight: pet.weight?.toString() || '',
-      profile_picture: pet.profile_picture || '',
       preferences: pet.preferences || ''
     });
+    // Define o preview da imagem
+    setImagePreview(pet.profile_picture || null);
+    setSelectedFile(null); // Limpa seleção de arquivo anterior
     setShowForm(true);
   };
 
-  // --- CORREÇÃO NA FUNÇÃO handleDelete ---
   const handleDelete = async (petId) => {
     if (!window.confirm('Tem certeza que deseja remover este pet?')) {
       return;
     }
-
     try {
-      // CORREÇÃO: Removido o '/api'
       await axios.delete(`/users/pets/${petId}`);
       setMessage('Pet removido com sucesso!');
       await fetchPets();
@@ -127,8 +181,8 @@ const Pets = () => {
       setError(error.response?.data?.error || 'Erro ao remover pet');
     }
   };
-  // --- FIM DA CORREÇÃO ---
 
+  // (ATUALIZADO) handleCancel
   const handleCancel = () => {
     setShowForm(false);
     setEditingPet(null);
@@ -137,10 +191,12 @@ const Pets = () => {
       breed: '',
       age: '',
       weight: '',
-      profile_picture: '',
       preferences: ''
     });
     setError('');
+    // Limpa os states de imagem
+    setSelectedFile(null);
+    setImagePreview(null);
   };
 
   if (loading) {
@@ -153,7 +209,7 @@ const Pets = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* ... (Header e Alertas - Sem alteração) ... */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Meus Pets</h1>
@@ -161,7 +217,10 @@ const Pets = () => {
         </div>
         {!showForm && (
           <Button
-            onClick={() => setShowForm(true)}
+            onClick={() => {
+              handleCancel(); // Limpa o form antes de abrir
+              setShowForm(true);
+            }}
             className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -182,7 +241,7 @@ const Pets = () => {
         </Alert>
       )}
 
-      {/* Pet Form */}
+      {/* (ATUALIZADO) Pet Form */}
       {showForm && (
         <Card>
           <CardHeader>
@@ -195,7 +254,20 @@ const Pets = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              
+              {/* (NOVO) Preview da Imagem */}
+              {imagePreview && (
+                <div className="flex justify-center">
+                  <img
+                    src={imagePreview}
+                    alt="Preview do pet"
+                    className="w-24 h-24 rounded-full object-cover"
+                  />
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* ... (Inputs de Name, Breed, Age, Weight - Sem alteração) ... */}
                 <div className="space-y-2">
                   <Label htmlFor="name">Nome *</Label>
                   <Input
@@ -248,17 +320,21 @@ const Pets = () => {
                 </div>
               </div>
 
+              {/* (ATUALIZADO) Input de Imagem */}
               <div className="space-y-2">
-                <Label htmlFor="profile_picture">URL da Foto</Label>
+                <Label htmlFor="profile_picture">
+                  {editingPet ? 'Alterar Foto' : 'Adicionar Foto'}
+                </Label>
                 <Input
                   id="profile_picture"
                   name="profile_picture"
-                  value={formData.profile_picture}
-                  onChange={handleChange}
-                  placeholder="https://exemplo.com/foto-pet.jpg"
+                  type="file" // MUDANÇA IMPORTANTE
+                  accept="image/png, image/jpeg, image/gif"
+                  onChange={handleFileChange} // MUDANÇA IMPORTANTE
                 />
               </div>
 
+              {/* ... (Input de Preferences e Botões - Sem alteração) ... */}
               <div className="space-y-2">
                 <Label htmlFor="preferences">Preferências e Características</Label>
                 <Textarea
@@ -294,7 +370,7 @@ const Pets = () => {
         </Card>
       )}
 
-      {/* Pets List */}
+      {/* (ATUALIZADO) Pets List */}
       {pets.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {pets.map((pet) => (
@@ -303,7 +379,7 @@ const Pets = () => {
                 <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center">
                   {pet.profile_picture ? (
                     <img
-                      src={pet.profile_picture}
+                      src={pet.profile_picture} // A lista exibe a foto do banco
                       alt={pet.name}
                       className="w-20 h-20 rounded-full object-cover"
                     />
@@ -316,6 +392,7 @@ const Pets = () => {
                   <CardDescription>{pet.breed}</CardDescription>
                 )}
               </CardHeader>
+              {/* ... (Resto do CardContent - Sem alteração) ... */}
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   {pet.age && (
@@ -363,6 +440,7 @@ const Pets = () => {
           ))}
         </div>
       ) : (
+        // ... (Card de "Nenhum pet" - Sem alteração) ...
         !showForm && (
           <Card>
             <CardContent className="text-center py-12">
@@ -374,7 +452,10 @@ const Pets = () => {
                 Adicione seu primeiro pet para começar a usar o Walkie
               </p>
               <Button
-                onClick={() => setShowForm(true)}
+                onClick={() => {
+                  handleCancel(); // Limpa o form antes de abrir
+                  setShowForm(true);
+                }}
                 className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600"
               >
                 <Plus className="w-4 h-4 mr-2" />
