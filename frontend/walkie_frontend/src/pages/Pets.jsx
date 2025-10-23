@@ -37,23 +37,19 @@ const Pets = () => {
     fetchPets();
   }, []);
 
-  // --- INÍCIO DA CORREÇÃO ---
+  // --- CORREÇÃO NA FUNÇÃO fetchPets ---
   const fetchPets = async () => {
-    // Limpa erros anteriores e garante que pets seja um array
     setError('');
     setPets([]);
-    setLoading(true); // Garante o estado de loading
+    setLoading(true);
 
     try {
-      const response = await axios.get('/users/pets');
+      // CORREÇÃO: Removido o '/api'
+      const response = await axios.get('/users/pets'); 
 
-      // Verificação crucial:
-      // Garante que o estado 'pets' só será atualizado se a resposta for um array
       if (Array.isArray(response.data)) {
         setPets(response.data);
       } else {
-        // Se a API retornar algo inesperado (null, {}, etc.), 
-        // loga um aviso e mantém 'pets' como um array vazio.
         console.warn('A API /api/users/pets não retornou um array:', response.data);
         setPets([]);
       }
@@ -61,7 +57,6 @@ const Pets = () => {
     } catch (error) {
       console.error('Erro ao carregar pets:', error);
       setError(error.response?.data?.error || 'Erro ao carregar pets');
-      // Garante que 'pets' seja um array vazio em caso de erro
       setPets([]); 
     } finally {
       setLoading(false);
@@ -76,6 +71,7 @@ const Pets = () => {
     });
   };
 
+  // --- CORREÇÃO NA FUNÇÃO handleSubmit ---
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -84,9 +80,11 @@ const Pets = () => {
 
     try {
       if (editingPet) {
+        // CORREÇÃO: Removido o '/api'
         await axios.put(`/users/pets/${editingPet.id}`, formData);
         setMessage('Pet atualizado com sucesso!');
       } else {
+        // CORREÇÃO: Removido o '/api'
         await axios.post('/users/pets', formData);
         setMessage('Pet cadastrado com sucesso!');
       }
@@ -99,6 +97,7 @@ const Pets = () => {
       setSaving(false);
     }
   };
+  // --- FIM DA CORREÇÃO ---
 
   const handleEdit = (pet) => {
     setEditingPet(pet);
@@ -113,12 +112,14 @@ const Pets = () => {
     setShowForm(true);
   };
 
+  // --- CORREÇÃO NA FUNÇÃO handleDelete ---
   const handleDelete = async (petId) => {
     if (!window.confirm('Tem certeza que deseja remover este pet?')) {
       return;
     }
 
     try {
+      // CORREÇÃO: Removido o '/api'
       await axios.delete(`/users/pets/${petId}`);
       setMessage('Pet removido com sucesso!');
       await fetchPets();
@@ -126,6 +127,7 @@ const Pets = () => {
       setError(error.response?.data?.error || 'Erro ao remover pet');
     }
   };
+  // --- FIM DA CORREÇÃO ---
 
   const handleCancel = () => {
     setShowForm(false);

@@ -23,8 +23,13 @@ const Profile = () => {
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
-    profile_picture: ''
+    // profile_picture foi removido daqui
   });
+  
+  // States para gerenciar o upload da imagem
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -33,12 +38,18 @@ const Profile = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
+        // A URL está correta, pois a baseURL do axios deve ser /api
         const response = await axios.get('/users/profile');
         setProfile(response.data);
+        
+        // Atualiza o formData apenas com o nome
         setFormData({
           name: response.data.name || '',
-          profile_picture: response.data.profile_picture || ''
         });
+        
+        // Define o preview da imagem
+        setImagePreview(response.data.profile_picture || null);
+
       } catch (error) {
         console.error('Erro ao carregar perfil:', error);
         setError('Erro ao carregar perfil');
@@ -50,6 +61,7 @@ const Profile = () => {
     fetchProfile();
   }, []);
 
+  // Handler para mudanças em inputs de TEXTO
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -57,32 +69,74 @@ const Profile = () => {
     });
   };
 
+  // Handler para mudanças em inputs de ARQUIVO
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      // Cria uma URL local temporária para o preview
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     setError('');
     setMessage('');
+    let updatedUser = profile; // Guarda o usuário atualizado
 
     try {
+      // ETAPA 1: Fazer upload da imagem (se uma nova foi selecionada)
+      if (selectedFile) {
+        const uploadFormData = new FormData();
+        uploadFormData.append('profile_picture', selectedFile);
+
+        // Envia o arquivo para a nova rota de upload
+        const uploadResponse = await axios.post(
+          '/users/profile/upload', 
+          uploadFormData, 
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          }
+        );
+        updatedUser = uploadResponse.data.user; // Pega o usuário com a nova URL
+        setSelectedFile(null); // Limpa o arquivo selecionado
+      }
+
+      // ETAPA 2: Salvar os dados de texto (como o nome)
+      // Envia os dados de texto para a rota de atualização do perfil
       const response = await axios.put('/users/profile', formData);
-      setProfile(response.data.user);
-      updateUser(response.data.user);
+      updatedUser = response.data.user; // Pega a atualização final (com o nome)
+
+      // Atualiza tudo
+      setProfile(updatedUser);
+      updateUser(updatedUser);
       setEditing(false);
       setMessage('Perfil atualizado com sucesso!');
+      
     } catch (error) {
       setError(error.response?.data?.error || 'Erro ao atualizar perfil');
+      // Se deu erro, reverte o preview para a imagem antiga
+      setImagePreview(profile?.profile_picture || null);
     } finally {
       setSaving(false);
     }
   };
 
   const handleCancel = () => {
+    // Reseta os dados de texto
     setFormData({
       name: profile?.name || '',
-      profile_picture: profile?.profile_picture || ''
     });
     setEditing(false);
     setError('');
     setMessage('');
+    
+    // Reseta a imagem e o arquivo
+    setSelectedFile(null); 
+    setImagePreview(profile?.profile_picture || null); // Reverte o preview
   };
 
   if (loading) {
@@ -161,15 +215,19 @@ const Profile = () => {
             <CardContent className="space-y-4">
               <div className="flex items-center space-x-4">
                 <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center">
-                  {profile?.profile_picture ? (
+                  
+                  {/* --- O PREVIEW DA IMAGEM É USADO AQUI --- */}
+                  {imagePreview ? (
                     <img
-                      src={profile.profile_picture}
+                      src={imagePreview}
                       alt="Foto do perfil"
                       className="w-20 h-20 rounded-full object-cover"
                     />
                   ) : (
                     <User className="w-10 h-10 text-white" />
                   )}
+                  {/* --- FIM DA MUDANÇA --- */}
+
                 </div>
                 <div className="flex-1">
                   {editing ? (
@@ -197,21 +255,23 @@ const Profile = () => {
 
               {editing && (
                 <div className="space-y-2">
-                  <Label htmlFor="profile_picture">URL da Foto do Perfil</Label>
+                  {/* --- O INPUT DE TEXTO FOI TROCADO POR UM INPUT DE ARQUIVO --- */}
+                  <Label htmlFor="profile_picture">Alterar Foto do Perfil</Label>
                   <Input
                     id="profile_picture"
                     name="profile_picture"
-                    value={formData.profile_picture}
-                    onChange={handleChange}
-                    placeholder="https://exemplo.com/foto.jpg"
+                    type="file" // Trocado para 'file'
+                    accept="image/png, image/jpeg, image/gif" // Aceita apenas imagens
+                    onChange={handleFileChange} // Chama a nova função
                   />
+                  {/* --- FIM DA MUDANÇA --- */}
                 </div>
               )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Statistics */}
+        {/* Statistics (Nenhuma mudança aqui) */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -279,4 +339,3 @@ const Profile = () => {
 };
 
 export default Profile;
-

@@ -1,9 +1,30 @@
+import os
+import uuid
 from flask import Blueprint, request, jsonify
 from src.models.models import db, User, Pet, Walk, UserBadge
 from src.routes.auth import verify_token
 from functools import wraps
+from werkzeug.utils import secure_filename
+from dotenv import load_dotenv
+from os import getenv
+
+# Carrega o .env para pegar a BASE_URL
+load_dotenv()
 
 users_bp = Blueprint('users', __name__)
+
+# --- CONFIGURAÇÃO DE UPLOAD ---
+# Define a pasta onde as imagens serão salvas
+# Caminho: sobe 1 nível (de 'routes' para 'src'), sobe 1 nível (de 'src' para 'walkie_backend'), entra em 'static/uploads/profiles'
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'static', 'uploads', 'profiles')
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+def allowed_file(filename):
+    """Verifica se a extensão do arquivo é permitida"""
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+# --- FIM DA CONFIGURAÇÃO DE UPLOAD ---
+
 
 def token_required(f):
     """Decorator para verificar autenticação"""
@@ -61,15 +82,16 @@ def get_profile(current_user):
 @users_bp.route('/profile', methods=['PUT'])
 @token_required
 def update_profile(current_user):
-    """Atualizar perfil do usuário"""
+    """Atualizar perfil do usuário (APENAS DADOS DE TEXTO, ex: nome)"""
     try:
         data = request.get_json()
         
         if data.get('name'):
             current_user.name = data['name']
         
-        if data.get('profile_picture'):
-            current_user.profile_picture = data['profile_picture']
+        # REMOVIDO: a foto não é atualizada aqui
+        # if data.get('profile_picture'):
+        #     current_user.profile_picture = data['profile_picture']
         
         db.session.commit()
         
@@ -81,6 +103,63 @@ def update_profile(current_user):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+
+# ---
+# --- NOVA ROTA DE UPLOAD DE FOTO ADICIONADA AQUI ---
+# ---
+@users_bp.route('/profile/upload', methods=['POST'])
+@token_required
+def upload_profile_picture(current_user):
+    """Lida com o UPLOAD da foto de perfil"""
+    
+    # 1. Verifica se o arquivo está na requisição
+    if 'profile_picture' not in request.files:
+        return jsonify({"error": "Nenhum arquivo enviado (procure por 'profile_picture')"}), 400
+
+    file = request.files['profile_picture']
+
+    # 2. Verifica se o nome do arquivo está vazio
+    if file.filename == '':
+        return jsonify({"error": "Nenhum arquivo selecionado"}), 400
+
+    # 3. Verifica se a extensão é válida
+    if file and allowed_file(file.filename):
+        # 4. Cria um nome de arquivo seguro e único
+        ext = file.filename.rsplit('.', 1)[1].lower()
+        filename = f"{current_user.id}_{uuid.uuid4()}.{ext}"
+        
+        # 5. Cria a pasta de uploads se ela não existir
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+        
+        # 6. Salva o arquivo no servidor
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        file.save(filepath)
+
+        # 7. Gera a URL pública do arquivo
+        #    IMPORTANTE: Você DEVE definir BASE_URL no seu .env
+        #    Ex: BASE_URL=http://localhost:8000
+        base_url = getenv('BASE_URL')
+        if not base_url:
+            print("AVISO: BASE_URL não definida no arquivo .env. O link da imagem pode ficar quebrado.")
+            base_url = "http://localhost:8000" # Fallback para localhost
+
+        file_url = f"{base_url}/static/uploads/profiles/{filename}"
+
+        # 8. Atualiza o banco de dados com a nova URL
+        current_user.profile_picture = file_url
+        db.session.commit()
+
+        return jsonify({
+            "message": "Upload bem-sucedido", 
+            "user": current_user.to_dict() # Retorna o usuário atualizado
+        }), 200
+    else:
+        return jsonify({"error": "Tipo de arquivo não permitido (use: png, jpg, jpeg, gif)"}), 400
+# ---
+# --- FIM DA NOVA ROTA ---
+# ---
+
 
 @users_bp.route('/pets', methods=['GET'])
 @token_required
@@ -217,4 +296,3 @@ def get_dashboard(current_user):
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
