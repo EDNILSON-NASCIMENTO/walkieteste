@@ -333,6 +333,18 @@ const Walk = () => {
                     ))}
                   </SelectContent>
                 </Select>
+
+                {/* --- BLOCO DE AVISO ADICIONADO --- */}
+                {!selectedPet && (
+                  <div className="flex items-center text-sm text-yellow-600 mt-3 p-3 bg-yellow-50 rounded-md">
+                    <AlertTriangle className="w-4 h-4 mr-2 flex-shrink-0" />
+                    <span>
+                      Selecione um pet acima para habilitar o botão "Iniciar Passeio".
+                    </span>
+                  </div>
+                )}
+                {/* --- FIM DO BLOCO --- */}
+
               </CardContent>
             </Card>
           )}
@@ -451,4 +463,3 @@ const Walk = () => {
 };
 
 export default Walk;
-
