@@ -37,13 +37,21 @@ const Profile = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  // --- FUNÇÃO PARA CONSTRUIR URL DA IMAGEM ---
+  // --- FUNÇÃO getImageUrl CORRIGIDA (Frontend Fix) ---
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
-    // Remove '/api' da baseURL se existir, depois junta com o caminho da imagem
+
+    // Verifica se imagePath já é uma URL completa
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      console.log("Profile.getImageUrl: Path já é URL completa:", imagePath);
+      return imagePath; // Retorna a URL completa como está
+    }
+
+    // Se não for completa, constrói a URL
     const baseUrlWithoutApi = axios.defaults.baseURL.replace('/api', '');
-    // Garante que não haja barras duplicadas
-    return `${baseUrlWithoutApi.replace(/\/$/, '')}/${imagePath.replace(/^\//, '')}`;
+    const fullUrl = `${baseUrlWithoutApi.replace(/\/$/, '')}/${imagePath.replace(/^\//, '')}`;
+    console.log("Profile.getImageUrl: Construindo URL:", imagePath, "->", fullUrl);
+    return fullUrl;
   };
   // --- FIM DA FUNÇÃO ---
 
@@ -60,9 +68,8 @@ const Profile = () => {
           name: response.data.name || '',
         });
 
-        // --- CORREÇÃO AQUI: Usa a função getImageUrl ---
+        // Usa a função getImageUrl corrigida
         setImagePreview(getImageUrl(response.data.profile_picture));
-        // --- FIM DA CORREÇÃO ---
 
       } catch (error) {
         console.error('Erro ao carregar perfil:', error);
@@ -86,12 +93,10 @@ const Profile = () => {
     const file = e.target.files[0];
     if (file) {
       setSelectedFile(file);
-      // Mantém a URL local para o preview durante a edição
-      setImagePreview(URL.createObjectURL(file));
+      setImagePreview(URL.createObjectURL(file)); // Preview local
     } else {
-      // Se o usuário cancelar a seleção, reverte para a imagem salva (se houver)
       setSelectedFile(null);
-      setImagePreview(getImageUrl(profile?.profile_picture));
+      setImagePreview(getImageUrl(profile?.profile_picture)); // Reverte preview
     }
   };
 
@@ -115,19 +120,20 @@ const Profile = () => {
         setSelectedFile(null);
       }
 
-      // Verifica se o nome mudou antes de enviar
+      // Só atualiza o nome se ele mudou
       if (formData.name !== profile?.name) {
           const response = await axios.put('/users/profile', { name: formData.name });
+          // Garante que updatedUser tenha a versão mais recente após a atualização do nome
+          // Se o upload já ocorreu, usa os dados dele, senão usa os dados da atualização do nome
           updatedUser = response.data.user;
       }
 
       setProfile(updatedUser);
-      updateUser(updatedUser); // Atualiza o contexto global
+      updateUser(updatedUser);
       setEditing(false);
 
-      // --- CORREÇÃO AQUI: Atualiza o preview com a URL do backend após salvar ---
+      // Atualiza o preview com a URL FINAL vinda do backend (usando a função corrigida)
       setImagePreview(getImageUrl(updatedUser.profile_picture));
-      // --- FIM DA CORREÇÃO ---
 
       setMessage('Perfil atualizado com sucesso!');
 
@@ -148,11 +154,9 @@ const Profile = () => {
     setEditing(false);
     setError('');
     setMessage('');
-
     setSelectedFile(null);
-    // --- CORREÇÃO AQUI: Reverte o preview usando a função getImageUrl ---
+    // Reverte o preview usando a função corrigida
     setImagePreview(getImageUrl(profile?.profile_picture));
-    // --- FIM DA CORREÇÃO ---
   };
 
   if (loading) {
@@ -184,7 +188,6 @@ const Profile = () => {
           <AlertDescription>{message}</AlertDescription>
         </Alert>
       )}
-
       {error && editing && (
         <Alert variant="destructive">
            <AlertTriangle className="h-4 w-4" />
@@ -200,38 +203,19 @@ const Profile = () => {
             <CardHeader>
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <CardTitle className="flex items-center text-xl">
-                  <User className="w-5 h-5 mr-2" />
-                  Informações Pessoais
+                  <User className="w-5 h-5 mr-2" /> Informações Pessoais
                 </CardTitle>
                 {!editing ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setEditing(true)}
-                    className="w-full sm:w-auto"
-                  >
-                    <Edit className="w-4 h-4 mr-2" />
-                    Editar
+                  <Button variant="outline" size="sm" onClick={() => setEditing(true)} className="w-full sm:w-auto">
+                    <Edit className="w-4 h-4 mr-2" /> Editar
                   </Button>
                 ) : (
                   <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
-                    <Button
-                      size="sm"
-                      onClick={handleSave}
-                      disabled={saving}
-                      className="w-full sm:w-auto"
-                    >
-                      <Save className="w-4 h-4 mr-2" />
-                      {saving ? 'Salvando...' : 'Salvar'}
+                    <Button size="sm" onClick={handleSave} disabled={saving} className="w-full sm:w-auto">
+                      <Save className="w-4 h-4 mr-2" /> {saving ? 'Salvando...' : 'Salvar'}
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleCancel}
-                      className="w-full sm:w-auto"
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      Cancelar
+                    <Button variant="outline" size="sm" onClick={handleCancel} className="w-full sm:w-auto">
+                      <X className="w-4 h-4 mr-2" /> Cancelar
                     </Button>
                   </div>
                 )}
@@ -239,56 +223,34 @@ const Profile = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-4">
-                <div className="w-24 h-24 sm:w-20 sm:h-20 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                  {/* --- CORREÇÃO AQUI: Usa imagePreview que agora pode ser a URL do backend ou blob local --- */}
+                <div className="w-24 h-24 sm:w-20 sm:h-20 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden border">
                   {imagePreview ? (
-                    <img
-                      src={imagePreview}
-                      alt="Foto do perfil"
-                      className="w-full h-full object-cover"
-                      key={imagePreview} // Adiciona key para forçar re-renderização se URL mudar
-                    />
+                    <img src={imagePreview} alt="Foto do perfil" className="w-full h-full object-cover" key={imagePreview} />
                   ) : (
                     <User className="w-10 h-10 text-white" />
                   )}
-                  {/* --- FIM DA CORREÇÃO --- */}
                 </div>
                 <div className="flex-1 text-center sm:text-left w-full">
                   {editing ? (
                     <div className="space-y-2">
                       <Label htmlFor="name">Nome</Label>
-                      <Input
-                        id="name"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        placeholder="Seu nome"
-                        className="text-base"
-                      />
+                      <Input id="name" name="name" value={formData.name} onChange={handleChange} placeholder="Seu nome" className="text-base" />
                     </div>
                   ) : (
                     <div>
                       <h3 className="text-xl font-semibold break-words">{profile?.name}</h3>
                       <p className="text-gray-600 flex items-center justify-center sm:justify-start mt-1 break-all">
-                        <Mail className="w-4 h-4 mr-1 flex-shrink-0" />
-                        {profile?.email}
+                        <Mail className="w-4 h-4 mr-1 flex-shrink-0" /> {profile?.email}
                       </p>
                     </div>
                   )}
                 </div>
               </div>
-
               {editing && (
                 <div className="space-y-1.5">
                   <Label htmlFor="profile_picture">Alterar Foto do Perfil</Label>
-                  <Input
-                    id="profile_picture"
-                    name="profile_picture"
-                    type="file"
-                    accept="image/png, image/jpeg, image/gif"
-                    onChange={handleFileChange}
-                    className="text-base file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                  />
+                  <Input id="profile_picture" name="profile_picture" type="file" accept="image/png, image/jpeg, image/gif" onChange={handleFileChange} className="text-base file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+                   <p className="text-xs text-muted-foreground">PNG, JPG ou GIF.</p>
                 </div>
               )}
             </CardContent>
@@ -297,65 +259,35 @@ const Profile = () => {
 
         {/* Statistics */}
         <div className="space-y-6">
-           <Card>
-             <CardHeader>
-               <CardTitle className="flex items-center text-xl">
-                 <Trophy className="w-5 h-5 mr-2" />
-                 Estatísticas
-               </CardTitle>
-             </CardHeader>
-             <CardContent className="grid grid-cols-2 gap-4">
-               <div className="text-center p-3 sm:p-4 bg-blue-50 rounded-lg">
-                 <MapPin className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 mx-auto mb-1 sm:mb-2" />
-                 <div className="text-xl sm:text-2xl font-bold text-blue-600">
-                   {statistics.total_walks || 0}
-                 </div>
-                 <p className="text-xs sm:text-sm text-gray-600">Passeios</p>
-               </div>
-               <div className="text-center p-3 sm:p-4 bg-green-50 rounded-lg">
-                 <Route className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 mx-auto mb-1 sm:mb-2" />
-                 <div className="text-xl sm:text-2xl font-bold text-green-600">
-                   {statistics.total_distance?.toFixed(1) || '0.0'} km
-                 </div>
-                 <p className="text-xs sm:text-sm text-gray-600">Distância</p>
-               </div>
-               <div className="text-center p-3 sm:p-4 bg-yellow-50 rounded-lg">
-                 <Award className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-500 mx-auto mb-1 sm:mb-2" />
-                 <div className="text-xl sm:text-2xl font-bold text-yellow-600">
-                   {statistics.total_badges || 0}
-                 </div>
-                 <p className="text-xs sm:text-sm text-gray-600">Badges</p>
-               </div>
-               <div className="text-center p-3 sm:p-4 bg-purple-50 rounded-lg">
-                 <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-purple-500 mx-auto mb-1 sm:mb-2" />
-                 <div className="text-xl sm:text-2xl font-bold text-purple-600">
-                   {profile?.total_points || 0}
-                 </div>
-                 <p className="text-xs sm:text-sm text-gray-600">Pontos</p>
-               </div>
-             </CardContent>
-           </Card>
-
-           <Card>
-             <CardHeader>
-               <CardTitle className="flex items-center text-xl">
-                 <CalendarDays className="w-5 h-5 mr-2" />
-                 Membro desde
-               </CardTitle>
-             </CardHeader>
-             <CardContent>
-               <p className="text-gray-600 text-sm sm:text-base">
-                 {profile?.created_at ?
-                   new Date(profile.created_at).toLocaleDateString('pt-BR', {
-                     year: 'numeric',
-                     month: 'long',
-                     day: 'numeric'
-                   }) :
-                   'Data não disponível'
-                 }
-               </p>
-             </CardContent>
-           </Card>
+          <Card>
+            <CardHeader><CardTitle className="flex items-center text-xl"><Trophy className="w-5 h-5 mr-2" /> Estatísticas</CardTitle></CardHeader>
+            <CardContent className="grid grid-cols-2 gap-4">
+              <div className="text-center p-3 sm:p-4 bg-blue-50 rounded-lg">
+                <MapPin className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 mx-auto mb-1 sm:mb-2" />
+                <div className="text-xl sm:text-2xl font-bold text-blue-600">{statistics.total_walks || 0}</div>
+                <p className="text-xs sm:text-sm text-gray-600">Passeios</p>
+              </div>
+              <div className="text-center p-3 sm:p-4 bg-green-50 rounded-lg">
+                <Route className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 mx-auto mb-1 sm:mb-2" />
+                <div className="text-xl sm:text-2xl font-bold text-green-600">{statistics.total_distance?.toFixed(1) || '0.0'} km</div>
+                <p className="text-xs sm:text-sm text-gray-600">Distância</p>
+              </div>
+              <div className="text-center p-3 sm:p-4 bg-yellow-50 rounded-lg">
+                <Award className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-500 mx-auto mb-1 sm:mb-2" />
+                <div className="text-xl sm:text-2xl font-bold text-yellow-600">{statistics.total_badges || 0}</div>
+                <p className="text-xs sm:text-sm text-gray-600">Badges</p>
+              </div>
+              <div className="text-center p-3 sm:p-4 bg-purple-50 rounded-lg">
+                <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-purple-500 mx-auto mb-1 sm:mb-2" />
+                <div className="text-xl sm:text-2xl font-bold text-purple-600">{profile?.total_points || 0}</div>
+                <p className="text-xs sm:text-sm text-gray-600">Pontos</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader><CardTitle className="flex items-center text-xl"><CalendarDays className="w-5 h-5 mr-2" /> Membro desde</CardTitle></CardHeader>
+            <CardContent><p className="text-gray-600 text-sm sm:text-base">{profile?.created_at ? new Date(profile.created_at).toLocaleDateString('pt-BR', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Data não disponível'}</p></CardContent>
+          </Card>
         </div>
       </div>
     </div>
