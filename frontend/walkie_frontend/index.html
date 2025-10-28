@@ -1,10 +1,21 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Walkie - Passeios com seu Pet</title>
+    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+    <script>
+      // Inicia o Eruda apenas se não estiver em produção
+      // (Para evitar que seus usuários vejam o console)
+      if (
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1"
+      ) {
+        eruda.init();
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
