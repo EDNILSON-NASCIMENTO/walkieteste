@@ -1,3 +1,80 @@
+/* PASSO 1: Definição da Família de Fontes Gottak
+  (Adicionado com base nos seus arquivos .otf) 
+*/
+@font-face {
+  font-family: 'Gottak';
+  src: url('./assets/fonts/Gottak-Thin.otf') format('opentype');
+  font-weight: 100;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Gottak';
+  src: url('./assets/fonts/Gottak-ExtraLight.otf') format('opentype');
+  font-weight: 200;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Gottak';
+  src: url('./assets/fonts/Gottak-Light.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Gottak';
+  src: url('./assets/fonts/Gottak-SemiBold.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+}
+
+/* --- Versões Itálicas --- */
+@font-face {
+  font-family: 'Gottak';
+  src: url('./assets/fonts/Gottak-ThinItalic.otf') format('opentype');
+  font-weight: 100;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'Gottak';
+  src: url('./assets/fonts/Gottak-ExtraLightItalic.otf') format('opentype');
+  font-weight: 200;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'Gottak';
+  src: url('./assets/fonts/Gottak-LightItalic.otf') format('opentype');
+  font-weight: 300;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'Gottak';
+  src: url('./assets/fonts/Gottak-RegularItalic.otf') format('opentype');
+  font-weight: 400; /* Regular */
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'Gottak';
+  src: url('./assets/fonts/Gottak-SemiBoldItalic.otf') format('opentype');
+  font-weight: 600;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'Gottak';
+  src: url('./assets/fonts/Gottak-BoldItalic.otf') format('opentype');
+  font-weight: 700; /* Bold */
+  font-style: italic;
+}
+
+/* PASSO 2: Seu código CSS original
+  (Mantido exatamente como estava)
+*/
 @import "tailwindcss";
 @import "tw-animate-css";
 

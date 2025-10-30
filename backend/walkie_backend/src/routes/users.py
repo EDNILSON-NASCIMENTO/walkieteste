@@ -9,7 +9,7 @@ from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 from os import getenv
 
-# Carrega o .env para pegar a BASE_URL
+# Carrega o .env (necessário APENAS se você usar o getenv em outro lugar)
 load_dotenv()
 
 users_bp = Blueprint('users', __name__)
@@ -124,8 +124,10 @@ def upload_profile_picture(current_user):
         filepath = os.path.join(PROFILE_UPLOAD_FOLDER, filename)
         file.save(filepath)
 
-        base_url = getenv('BASE_URL', 'http://localhost:8000')
-        file_url = f"{base_url}/static/uploads/profiles/{filename}"
+        # --- CORREÇÃO AQUI ---
+        # Remova o 'base_url'. Salve APENAS o caminho relativo.
+        file_url = f"/static/uploads/profiles/{filename}"
+        # --- FIM DA CORREÇÃO ---
 
         current_user.profile_picture = file_url
         db.session.commit()
@@ -268,9 +270,10 @@ def upload_pet_picture(current_user, pet_id):
         filepath = os.path.join(PET_UPLOAD_FOLDER, filename)
         file.save(filepath)
 
-        base_url = getenv('BASE_URL', 'http://localhost:8000')
-        # (NOVO) Caminho da URL
-        file_url = f"{base_url}/static/uploads/pets/{filename}" 
+        # --- CORREÇÃO AQUI ---
+        # Remova o 'base_url'. Salve APENAS o caminho relativo.
+        file_url = f"/static/uploads/pets/{filename}" 
+        # --- FIM DA CORREÇÃO ---
 
         # 4. Atualiza o pet no banco
         pet.profile_picture = file_url

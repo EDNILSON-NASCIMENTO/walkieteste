@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Heart, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react'; // Removi 'Heart' daqui
+import logo from '@/assets/LOGO-PRPL.png'; // 1. Importei o seu logo
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -50,11 +51,13 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-green-50 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
+          
+          {/* 2. Substituí o bloco do ícone <Heart> por esta tag <img> */}
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center">
-              <Heart className="w-8 h-8 text-white" />
-            </div>
+            <img src={logo} alt="Walkie Logo" className="w-40" /> 
+            {/* Você pode ajustar o tamanho em 'w-40' (width: 10rem) se precisar */}
           </div>
+          
           <CardTitle className="text-2xl font-bold">Bem-vindo ao Walkie</CardTitle>
           <CardDescription>
             Entre na sua conta para começar a passear com seu pet
@@ -143,4 +146,3 @@ const Login = () => {
 };
 
 export default Login;
-

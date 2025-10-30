@@ -39,10 +39,11 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default_secret_key_for_dev')
 
 # Lista de origens permitidas (seu frontend de desenvolvimento)
 origins = [
-    # "http://localhost:5173"
+    "http://localhost:5173",
+    "http://192.168.15.102:5173", # tira essa linhas quando manda para o servidor remoto
     # Quando você for para produção, adicione a URL do seu site aqui
     # Ex: "https://seusite.com"
-    "https://clubwalkie.com",
+    # "https://clubwalkie.com",
 ]
 
 CORS(
