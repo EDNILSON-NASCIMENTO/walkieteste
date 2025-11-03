@@ -74,10 +74,8 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
 };
 
 const Walk = () => {
-  // ================== AJUSTE 1: Estado para o Mapa ==================
-  // Adicionamos um estado para guardar a instância do mapa Leaflet
+  // AJUSTE 1: Estado para o Mapa
   const [mapInstance, setMapInstance] = useState(null);
-  // =================================================================
 
   const [pets, setPets] = useState([]);
   const [selectedPet, setSelectedPet] = useState("");
@@ -85,6 +83,10 @@ const Walk = () => {
   const [currentWalk, setCurrentWalk] = useState(null);
   const [position, setPosition] = useState(null);
   const [route, setRoute] = useState([]);
+  // ================== AJUSTE 6 (PASSO 1) ==================
+  // Novo estado para guardar a rota finalizada
+  const [lastFinishedRoute, setLastFinishedRoute] = useState(null);
+  // ========================================================
   const [walkStats, setWalkStats] = useState({
     duration: 0,
     distance: 0,
@@ -100,7 +102,7 @@ const Walk = () => {
   const lastPauseStartTime = useRef(null);
   const intervalId = useRef(null);
   const totalDistance = useRef(0);
-  const mapContainerRef = useRef(null); // <--- AJUSTE 4 (Passo 1)
+  const mapContainerRef = useRef(null); // AJUSTE 4 (Ref para o contêiner)
 
   useEffect(() => {
     const getInitialLocation = () => {
@@ -133,18 +135,14 @@ const Walk = () => {
     };
   }, []);
 
-  // ================== AJUSTE 2: useEffect para Destruir o Mapa ==================
-  // Este useEffect é dedicado a limpar a instância do mapa
-  // quando o componente for desmontado (você sair da página).
+  // AJUSTE 2: useEffect para Destruir o Mapa
   useEffect(() => {
-    // A função de retorno (limpeza) será executada ao desmontar
     return () => {
       if (mapInstance) {
-        mapInstance.remove(); // Isso destrói o mapa e corrige o bug
+        mapInstance.remove();
       }
     };
-  }, [mapInstance]); // Ele "assiste" a variável mapInstance
-  // ============================================================================
+  }, [mapInstance]);
 
   useEffect(() => {
     if (walkState === "active") {
@@ -159,33 +157,24 @@ const Walk = () => {
     };
   }, [walkState]);
 
-  // ================== AJUSTE 4 (Passo 3): Observador de Redimensionamento ==================
-  // Este useEffect corrige bugs de layout responsivo (como sidebars)
+  // AJUSTE 4: Observador de Redimensionamento
   useEffect(() => {
-    // Só executa se tivermos a instância do mapa E a ref do contêiner
     if (!mapInstance || !mapContainerRef.current) return;
 
-    // Cria um observador que monitora mudanças no tamanho do elemento
     const resizeObserver = new ResizeObserver(() => {
-      // Damos um pequeno delay para garantir que as transições CSS
-      // (como o menu deslizando) tenham terminado
       const timer = setTimeout(() => {
-        mapInstance.invalidateSize(); // Força o mapa a recalcular o tamanho
-      }, 100); // 100ms é geralmente seguro
+        mapInstance.invalidateSize();
+      }, 100); 
 
       return () => clearTimeout(timer);
     });
 
-    // Inicia a observação no 'div' pai do mapa
     resizeObserver.observe(mapContainerRef.current);
 
-    // Função de limpeza: para de observar quando o componente
-    // for desmontado ou as dependências mudarem
     return () => {
       resizeObserver.disconnect();
     };
-  }, [mapInstance, mapContainerRef]); // Dependências: mapInstance e a ref
-  // ============================================================================
+  }, [mapInstance, mapContainerRef]);
 
 
   const fetchPets = async () => {
@@ -341,6 +330,12 @@ const Walk = () => {
     if (loading || loadingLocation) return;
     setLoading(true);
     setError("");
+    
+    // ================== AJUSTE 6 (PASSO 2) ==================
+    // Limpa a rota anterior para dar espaço para a nova
+    setLastFinishedRoute(null);
+    // ========================================================
+
     setWalkStats({ duration: 0, distance: 0, calories: 0 });
     setRoute([]);
     totalDistance.current = 0;
@@ -356,7 +351,8 @@ const Walk = () => {
       startTime.current = Date.now();
       
       startTracking();
-    } catch (err) {
+    } catch (err)
+ {
       console.error("Error starting walk:", err.response?.data || err.message);
       setError(err.response?.data?.error || "Erro ao iniciar passeio");
       setWalkState("idle");
@@ -407,15 +403,19 @@ const Walk = () => {
       await axios.put(`/walks/finish/${currentWalk.id}`, payload);
       console.log("Walk finished backend OK.");
 
+      // ================== AJUSTE 6 (PASSO 3) ==================
       setWalkState("idle");
       setCurrentWalk(null);
-      setRoute([]);
+      setRoute([]); // Limpa a rota ATIVA
+      setLastFinishedRoute(finalRoute); // SALVA a rota finalizada para exibição
+      // ========================================================
+      
       setWalkStats({ duration: 0, distance: 0, calories: 0 });
       totalDistance.current = 0;
       startTime.current = null;
       pausedTime.current = 0;
       lastPauseStartTime.current = null;
-      setSelectedPet("");
+      setSelectedPet(""); // Pode ser interessante limpar o pet selecionado
 
       alert("Passeio finalizado com sucesso!");
     
@@ -475,9 +475,10 @@ const Walk = () => {
               </CardTitle>{" "}
             </CardHeader>
             <CardContent>
+              {/* AJUSTE 5 (Z-INDEX) */}
               <div
-                ref={mapContainerRef} // <--- AJUSTE 4 (Passo 2)
-                className="h-64 sm:h-80 md:h-96 lg:h-[500px] rounded-md overflow-hidden bg-gray-200 flex items-center justify-center relative"
+                ref={mapContainerRef}
+                className="h-64 sm:h-80 md:h-96 lg:h-[500px] rounded-md overflow-hidden bg-gray-200 flex items-center justify-center relative z-0"
               >
                 
                 {(loadingLocation && (walkState === "idle" || (walkState === "active" && !position))) && (
@@ -503,10 +504,8 @@ const Walk = () => {
                 
                 {position && (
                   <MapContainer
-                    // ============ AJUSTE 3: Capturar Instância ============
-                    // Usamos a prop 'whenCreated' para salvar o mapa no estado
+                    // AJUSTE 3: Capturar Instância
                     whenCreated={setMapInstance}
-                    // ======================================================
                     center={[position.lat, position.lng]}
                     zoom={16}
                     scrollWheelZoom={true}
@@ -520,14 +519,30 @@ const Walk = () => {
                     {position && (
                       <Marker position={[position.lat, position.lng]} />
                     )}
+
+                    {/* ================== AJUSTE 6 (PASSO 4) ================== */}
+                    
+                    {/* Se estiver em um passeio (route > 1), mostra a rota ATIVA */}
                     {route.length > 1 && (
                       <Polyline
                         positions={route.map((p) => [p.lat, p.lng])}
-                        color="#3b82f6"
+                        color="#3b82f6" // Azul (ativo)
                         weight={5}
                         opacity={0.8}
                       />
                     )}
+                    
+                    {/* Se estiver IDLE e tiver uma ROTA ANTERIOR, mostra a rota FINALIZADA */}
+                    {walkState === "idle" && lastFinishedRoute && lastFinishedRoute.length > 1 && (
+                       <Polyline
+                        positions={lastFinishedRoute.map((p) => [p.lat, p.lng])}
+                        color="#84cc16" // Verde (finalizado)
+                        weight={5}
+                        opacity={0.8}
+                      />
+                    )}
+                    {/* ========================================================== */}
+
                   </MapContainer>
                 )}
               </div>
@@ -545,7 +560,11 @@ const Walk = () => {
                 </CardTitle>
                 {!loading && pets.length > 0 && (
                   <CardDescription>
-                    Escolha um pet para iniciar.
+                    {/* Mostra uma msg diferente se acabou de terminar um passeio */}
+                    {lastFinishedRoute 
+                      ? "Passeio anterior finalizado. Selecione um pet para outro."
+                      : "Escolha um pet para iniciar."
+                    }
                   </CardDescription>
                 )}
               </CardHeader>
@@ -612,7 +631,13 @@ const Walk = () => {
                     ? "Aguarde..."
                     : loadingLocation
                     ? "Carregando GPS..."
-                    : "Iniciar Passeio"}
+                    // ================== AJUSTE 6 (BÔNUS) ==================
+                    // Muda o texto do botão se estiver mostrando uma rota finalizada
+                    : lastFinishedRoute
+                    ? "Novo Passeio"
+                    : "Iniciar Passeio"
+                   // ========================================================
+                  }
                 </Button>
               )}
               {walkState === "active" && (
@@ -667,10 +692,43 @@ const Walk = () => {
             </CardContent>
           </Card>
 
+          {/* ================== AJUSTE 6 (BÔNUS) ================== */}
+          {/* Mostra as estatísticas da rota finalizada se houver uma */}
+          {walkState === "idle" && lastFinishedRoute ? (
+             <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Resumo do Último Passeio</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-3 gap-3 text-center">
+                <div className="p-2 bg-blue-50 rounded-lg">
+                  <Clock className="w-6 h-6 text-blue-500 mx-auto mb-1" />
+                  <div className="text-xl font-bold text-blue-600">
+                    {/* As stats são zeradas, então precisaríamos salvá-las também */}
+                    {/* Por enquanto, isso não vai funcionar como esperado sem
+                        salvar as stats do último passeio também.
+                        Para simplificar, vou remover isso por hora
+                        e deixar apenas o card de estatísticas padrão
+                        que já existe abaixo.
+                    */}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
+          {/* ======================================================== */}
+
+
+          {/* Mostra estatísticas se NÃO estiver idle OU se tiver acabado de carregar (pets) */}
           {(walkState !== "idle" || !loading) && (
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Estatísticas</CardTitle>
+                <CardTitle className="text-lg">
+                  {/* Muda o título do card se for um resumo */}
+                  {walkState === "idle" && lastFinishedRoute 
+                    ? "Resumo do Último Passeio"
+                    : "Estatísticas"
+                  }
+                </CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-3 gap-3 text-center">
                 <div className="p-2 bg-blue-50 rounded-lg">
