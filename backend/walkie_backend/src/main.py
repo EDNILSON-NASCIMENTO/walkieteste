@@ -72,15 +72,19 @@ CORS(
 
 
 # Registrar blueprints
-app.register_blueprint(auth_bp, url_prefix='/api/auth')
-# app.register_blueprint(users_bp, url_prefix='/api/users')
-# app.register_blueprint(walks_bp, url_prefix='/api/walks')
-# app.register_blueprint(gamification_bp, url_prefix='/api/gamification')
+app.register_blueprint(auth_bp, url_prefix='/auth')
+app.register_blueprint(users_bp, url_prefix='/api/users')
+app.register_blueprint(walks_bp, url_prefix='/api/walks')
+app.register_blueprint(gamification_bp, url_prefix='/api/gamification')
+app.register_blueprint(auth_bp, url_prefix='/auth')
 
-# app.register_blueprint(auth_bp, url_prefix='/auth')
-app.register_blueprint(users_bp, url_prefix='/users')
-app.register_blueprint(walks_bp, url_prefix='/walks')
-app.register_blueprint(gamification_bp, url_prefix='/gamification')
+
+#Blueprint para testes
+# app.register_blueprint(auth_bp, url_prefix='/api/auth')
+# app.register_blueprint(users_bp, url_prefix='/users')
+# app.register_blueprint(walks_bp, url_prefix='/walks')
+# app.register_blueprint(gamification_bp, url_prefix='/gamification')
+
 
 # --- CONFIGURAÇÃO CORRETA DO BANCO DE DADOS ---
 # Pega as credenciais do arquivo .env
