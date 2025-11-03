@@ -28,16 +28,12 @@ const Ranking = () => {
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
 
-    // Verifica se imagePath já é uma URL completa
     if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-      console.log("Ranking.getImageUrl: Path já é URL completa:", imagePath);
-      return imagePath; // Retorna a URL completa como está
+      return imagePath;
     }
 
-    // Se não for completa, constrói a URL
     const baseUrlWithoutApi = axios.defaults.baseURL.replace('/api', '');
     const fullUrl = `${baseUrlWithoutApi.replace(/\/$/, '')}/${imagePath.replace(/^\//, '')}`;
-    console.log("Ranking.getImageUrl: Construindo URL:", imagePath, "->", fullUrl);
     return fullUrl;
   };
   // --- FIM DA FUNÇÃO ---
@@ -139,7 +135,13 @@ const Ranking = () => {
                     <div className="space-y-2 sm:space-y-3">
                       {rankingData.ranking.map((user) => (
                         <div key={user.user_id} className={`flex items-center justify-between p-2 sm:p-3 rounded-lg border ${ user.is_current_user ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-100' }`}>
-                          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                          
+                          {/* ================ AJUSTE 1 (SAFARI FIX) ================ */}
+                          {/* Adicionamos 'overflow-hidden' para forçar o Safari */}
+                          {/* a respeitar o 'flex-1' e 'min-w-0' */}
+                          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1 overflow-hidden">
+                          {/* ======================================================== */}
+
                             {getRankIcon(user.position)}
                             <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center overflow-hidden border">
                               {/* Usa a função corrigida */}
@@ -161,6 +163,7 @@ const Ranking = () => {
                           <div className="text-right ml-2 flex-shrink-0">
                             <p className="font-bold text-sm sm:text-base text-blue-600">{user.points || 0}</p>
                             <p className="text-xs text-gray-600 hidden xxs:block">pontos</p>
+
                           </div>
                         </div>
                       ))}
@@ -218,7 +221,12 @@ const Ranking = () => {
                       {challenges.map((challenge) => { const { percentage, progressText } = formatChallengeProgress(challenge); return (
                             <div key={challenge.id} className={`p-3 sm:p-4 rounded-lg border ${ challenge.completed ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200' }`}>
                               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3">
-                                <div className="flex-1 min-w-0 w-full">
+                                
+                                {/* ================ AJUSTE 2 (SAFARI FIX) ================ */}
+                                {/* Adicionamos 'overflow-hidden' aqui também */}
+                                <div className="flex-1 min-w-0 w-full overflow-hidden">
+                                {/* ======================================================== */}
+
                                   <div className="flex items-center space-x-2 mb-1">
                                     <h3 className="font-semibold text-sm sm:text-base">{challenge.title}</h3>
                                     {challenge.completed && (<Badge className="bg-green-600 text-white text-xs px-1.5 sm:px-2">Completo!</Badge>)}
