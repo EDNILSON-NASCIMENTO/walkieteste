@@ -71,12 +71,12 @@ CORS(
 # --- FIM DA CORREÇÃO CORS ---
 
 
+
 # Registrar blueprints
-app.register_blueprint(auth_bp, url_prefix='/auth')
+app.register_blueprint(auth_bp, url_prefix='/api/auth') # <-- CORRIGIDO
 app.register_blueprint(users_bp, url_prefix='/api/users')
 app.register_blueprint(walks_bp, url_prefix='/api/walks')
 app.register_blueprint(gamification_bp, url_prefix='/api/gamification')
-app.register_blueprint(auth_bp, url_prefix='/auth')
 
 
 #Blueprint para testes
