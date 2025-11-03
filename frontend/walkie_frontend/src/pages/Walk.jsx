@@ -100,6 +100,7 @@ const Walk = () => {
   const lastPauseStartTime = useRef(null);
   const intervalId = useRef(null);
   const totalDistance = useRef(0);
+  const mapContainerRef = useRef(null); // <--- AJUSTE 4 (Passo 1)
 
   useEffect(() => {
     const getInitialLocation = () => {
@@ -157,6 +158,35 @@ const Walk = () => {
       if (intervalId.current) clearInterval(intervalId.current);
     };
   }, [walkState]);
+
+  // ================== AJUSTE 4 (Passo 3): Observador de Redimensionamento ==================
+  // Este useEffect corrige bugs de layout responsivo (como sidebars)
+  useEffect(() => {
+    // Só executa se tivermos a instância do mapa E a ref do contêiner
+    if (!mapInstance || !mapContainerRef.current) return;
+
+    // Cria um observador que monitora mudanças no tamanho do elemento
+    const resizeObserver = new ResizeObserver(() => {
+      // Damos um pequeno delay para garantir que as transições CSS
+      // (como o menu deslizando) tenham terminado
+      const timer = setTimeout(() => {
+        mapInstance.invalidateSize(); // Força o mapa a recalcular o tamanho
+      }, 100); // 100ms é geralmente seguro
+
+      return () => clearTimeout(timer);
+    });
+
+    // Inicia a observação no 'div' pai do mapa
+    resizeObserver.observe(mapContainerRef.current);
+
+    // Função de limpeza: para de observar quando o componente
+    // for desmontado ou as dependências mudarem
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [mapInstance, mapContainerRef]); // Dependências: mapInstance e a ref
+  // ============================================================================
+
 
   const fetchPets = async () => {
     setError("");
@@ -445,7 +475,10 @@ const Walk = () => {
               </CardTitle>{" "}
             </CardHeader>
             <CardContent>
-              <div className="h-64 sm:h-80 md:h-96 lg:h-[500px] rounded-md overflow-hidden bg-gray-200 flex items-center justify-center relative">
+              <div
+                ref={mapContainerRef} // <--- AJUSTE 4 (Passo 2)
+                className="h-64 sm:h-80 md:h-96 lg:h-[500px] rounded-md overflow-hidden bg-gray-200 flex items-center justify-center relative"
+              >
                 
                 {(loadingLocation && (walkState === "idle" || (walkState === "active" && !position))) && (
                   <div className="absolute inset-0 bg-gray-200 bg-opacity-80 flex items-center justify-center z-10">
