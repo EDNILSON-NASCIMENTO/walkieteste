@@ -39,7 +39,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { Link } from "react-router-dom";
 
-// Fix icons (SEU CÓDIGO ORIGINAL)
+// Fix icons
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -48,7 +48,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
-// Map view component (SEU CÓDIGO ORIGINAL)
+// Map view component
 const ChangeMapView = ({ coords }) => {
   const map = useMap();
   useEffect(() => {
@@ -57,7 +57,7 @@ const ChangeMapView = ({ coords }) => {
   return null;
 };
 
-// Haversine formula (SEU CÓDIGO ORIGINAL)
+// Haversine formula
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
   if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
   const R = 6371000; // meters
@@ -74,19 +74,24 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
 };
 
 const Walk = () => {
+  // ================== AJUSTE 1: Estado para o Mapa ==================
+  // Adicionamos um estado para guardar a instância do mapa Leaflet
+  const [mapInstance, setMapInstance] = useState(null);
+  // =================================================================
+
   const [pets, setPets] = useState([]);
   const [selectedPet, setSelectedPet] = useState("");
   const [walkState, setWalkState] = useState("idle");
   const [currentWalk, setCurrentWalk] = useState(null);
   const [position, setPosition] = useState(null);
-  const [route, setRoute] = useState([]); // Garantido como array
+  const [route, setRoute] = useState([]);
   const [walkStats, setWalkStats] = useState({
     duration: 0,
     distance: 0,
     calories: 0,
   });
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true); // Loading dos Pets
+  const [loading, setLoading] = useState(true);
   const [loadingLocation, setLoadingLocation] = useState(true);
 
   const watchId = useRef(null);
@@ -94,7 +99,7 @@ const Walk = () => {
   const pausedTime = useRef(0);
   const lastPauseStartTime = useRef(null);
   const intervalId = useRef(null);
-  const totalDistance = useRef(0); // Ref para acumular distância
+  const totalDistance = useRef(0);
 
   useEffect(() => {
     const getInitialLocation = () => {
@@ -127,6 +132,19 @@ const Walk = () => {
     };
   }, []);
 
+  // ================== AJUSTE 2: useEffect para Destruir o Mapa ==================
+  // Este useEffect é dedicado a limpar a instância do mapa
+  // quando o componente for desmontado (você sair da página).
+  useEffect(() => {
+    // A função de retorno (limpeza) será executada ao desmontar
+    return () => {
+      if (mapInstance) {
+        mapInstance.remove(); // Isso destrói o mapa e corrige o bug
+      }
+    };
+  }, [mapInstance]); // Ele "assiste" a variável mapInstance
+  // ============================================================================
+
   useEffect(() => {
     if (walkState === "active") {
       if (intervalId.current) clearInterval(intervalId.current);
@@ -140,7 +158,6 @@ const Walk = () => {
     };
   }, [walkState]);
 
-  // (SEU CÓDIGO ORIGINAL)
   const fetchPets = async () => {
     setError("");
     try {
@@ -163,7 +180,6 @@ const Walk = () => {
     }
   };
 
-  // (SEU CÓDIGO ORIGINAL - Perfeito)
   const getLatestStats = () => {
     let currentDuration = 0;
     
@@ -197,29 +213,16 @@ const Walk = () => {
     };
   };
 
-  // (SEU CÓDIGO ORIGINAL - Perfeito)
   const updateTimerAndCalories = () => {
     const latestStats = getLatestStats();
     setWalkStats(latestStats);
   };
 
-  // ====================================================================
-  // FUNÇÃO CORRIGIDA
-  // ====================================================================
   const handlePositionUpdate = (pos) => {
-    // 1. LINHA REMOVIDA:
-    // A verificação 'if (walkState !== "active") return;' foi removida.
-    // Ela causava um bug de "stale closure" que impedia
-    // a função de executar, mantendo a distância em 0.
-    // O rastreamento (watchId) já é parado por stopTracking()
-    // nos estados 'paused' ou 'idle', então esta verificação era
-    // redundante e incorreta.
-
     const newPosition = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-    setPosition(newPosition); // Para o marcador
+    setPosition(newPosition);
     
     setRoute((prevRoute) => {
-      // Definimos lastPosition aqui, dentro do updater
       const lastPosition = prevRoute.length > 0 ? prevRoute[prevRoute.length - 1] : null;
       
       if (lastPosition) {
@@ -230,47 +233,33 @@ const Walk = () => {
           newPosition.lng
         );
         
-        // Limite de 1 metro para evitar ruído do GPS
         if (distanceIncrement > 1) { 
-          // 2. ATUALIZA A REF (como você já fazia)
           totalDistance.current += distanceIncrement;
           
-          // 3. CALCULA NOVOS VALORES
-          // (Calculamos aqui para atualizar a UI imediatamente)
           const newDistance = Math.round(totalDistance.current);
-          const newCalories = Math.floor((newDistance / 1000) * 50); // Média de 50kcal/km
+          const newCalories = Math.floor((newDistance / 1000) * 50);
 
-          // 4. ATUALIZA O STATE USANDO O UPDATER
-          // (Isso preserva a 'duration' que o timer está atualizando)
           setWalkStats((prevStats) => ({
-            ...prevStats, // Mantém a duração atual
+            ...prevStats,
             distance: newDistance,
-            calories: newCalories, // Atualiza as calorias junto
+            calories: newCalories,
           })); 
           
           return [...prevRoute, newPosition];
         }
       } else {
-        // Este é o primeiro ponto (caso 'startTracking' não tenha definido um)
         return [newPosition];
       }
       
-      // Se distanceIncrement <= 1 (muito pequeno), não faz nada
       return prevRoute;
     });
   };
-  // ====================================================================
-  // FIM DA CORREÇÃO
-  // ====================================================================
 
-
-  // (SEU CÓDIGO ORIGINAL)
   const handlePositionError = (geoError) => {
     console.error("Erro de geolocalização (watch):", geoError);
     setError(`Erro GPS: ${geoError.message}. Verifique permissões/sinal.`);
   };
 
-  // (SEU CÓDIGO ORIGINAL)
   const startTracking = () => {
     if (!navigator.geolocation) {
       setError("Geolocalização não suportada.");
@@ -284,12 +273,12 @@ const Walk = () => {
         setPosition(firstPos);
         setRoute([firstPos]);
         
-        setLoading(false); // Para o loading do botão "Iniciar"
+        setLoading(false);
         
         if (watchId.current) navigator.geolocation.clearWatch(watchId.current);
         
         watchId.current = navigator.geolocation.watchPosition(
-          handlePositionUpdate, // <- Agora usa a versão correta
+          handlePositionUpdate,
           handlePositionError,
           { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );
@@ -299,7 +288,7 @@ const Walk = () => {
         setError(
           `Erro GPS inicial: ${geoError.message}. Verifique permissões.`
         );
-        setLoading(false); // Para o loading do botão
+        setLoading(false);
         setWalkState("idle");
         setCurrentWalk(null);
       },
@@ -307,7 +296,6 @@ const Walk = () => {
     );
   };
 
-  // (SEU CÓDIGO ORIGINAL)
   const stopTracking = () => {
     if (watchId.current) {
       navigator.geolocation.clearWatch(watchId.current);
@@ -315,7 +303,6 @@ const Walk = () => {
     }
   };
 
-  // (SEU CÓDIGO ORIGINAL)
   const startWalk = async () => {
     if (!selectedPet) {
       setError("Selecione um pet para iniciar.");
@@ -348,7 +335,6 @@ const Walk = () => {
     }
   };
 
-  // (SEU CÓDIGO ORIGINAL)
   const pauseWalk = () => {
     if (walkState !== "active") return;
     lastPauseStartTime.current = Date.now();
@@ -357,7 +343,6 @@ const Walk = () => {
     updateTimerAndCalories();
   };
 
-  // (SEU CÓDIGO ORIGINAL)
   const resumeWalk = () => {
     if (walkState !== "paused" || !lastPauseStartTime.current) return;
     pausedTime.current += Date.now() - lastPauseStartTime.current;
@@ -366,7 +351,6 @@ const Walk = () => {
     startTracking();
   };
 
-  // (SEU CÓDIGO ORIGINAL)
   const finishWalk = async () => {
     if (!currentWalk || loading) return;
     setLoading(true);
@@ -375,17 +359,15 @@ const Walk = () => {
     if (intervalId.current) clearInterval(intervalId.current);
     intervalId.current = null;
 
-    // Garante que os stats finais (especialmente a distância) sejam
-    // os valores mais atuais da ref.
     const finalStats = getLatestStats(); 
-    setWalkStats(finalStats); // Atualiza a UI uma última vez
+    setWalkStats(finalStats);
 
     const finalRoute = route; 
 
     try {
       const payload = {
         route_data: finalRoute.map((p) => ({ lat: p.lat, lng: p.lng })),
-        distance: finalStats.distance, // <--- Usa a distância final calculada
+        distance: finalStats.distance,
         duration: finalStats.duration,
         calories: finalStats.calories,
       };
@@ -417,12 +399,10 @@ const Walk = () => {
           "Erro ao finalizar passeio. Verifique o console."
       );
     } finally {
-        // Garante que o loading pare, mesmo se a API falhar
         setLoading(false);
     }
   };
 
-  // (SEU CÓDIGO ORIGINAL - Perfeito)
   const formatTime = (seconds) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -490,6 +470,10 @@ const Walk = () => {
                 
                 {position && (
                   <MapContainer
+                    // ============ AJUSTE 3: Capturar Instância ============
+                    // Usamos a prop 'whenCreated' para salvar o mapa no estado
+                    whenCreated={setMapInstance}
+                    // ======================================================
                     center={[position.lat, position.lng]}
                     zoom={16}
                     scrollWheelZoom={true}
