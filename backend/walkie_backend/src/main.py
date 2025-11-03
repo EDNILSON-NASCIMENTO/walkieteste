@@ -33,6 +33,19 @@ app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'sta
 
 # Pega a SECRET_KEY do ambiente ou usa um valor padrão
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default_secret_key_for_dev')
+# --- INÍCIO DA CORREÇÃO DE COOKIES ---
+
+app.config.update(
+    # 1. ESSENCIAL: Permite que o cookie seja enviado em requisições entre sites diferentes.
+    SESSION_COOKIE_SAMESITE='None', 
+    
+    # 2. ESSENCIAL: Garante que o cookie só seja enviado via HTTPS (Ngrok fornece HTTPS)
+    SESSION_COOKIE_SECURE=True, 
+    
+    # 3. Recomendado: Impede que scripts do lado do cliente (JavaScript) acessem o cookie.
+    SESSION_COOKIE_HTTPONLY=True 
+)
+# --- FIM DA CORREÇÃO DE COOKIES ---
 
 # --- INÍCIO DA CORREÇÃO CORS ---
 # Substitua a linha 'CORS(app, origins=['*'])' por este bloco
@@ -40,10 +53,12 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default_secret_key_for_dev')
 # Lista de origens permitidas (seu frontend de desenvolvimento)
 origins = [
     "http://localhost:5173",
-    "http://192.168.15.102:5173", # tira essa linhas quando manda para o servidor remoto
+    "http://192.168.15.102:5173",
+    "https://kristen-unsiding-norene.ngrok-free.dev", # tira essa linhas quando manda para o servidor remoto
+    
     # Quando você for para produção, adicione a URL do seu site aqui
     # Ex: "https://seusite.com"
-    # "https://clubwalkie.com",
+    "https://clubwalkie.com",
 ]
 
 CORS(
@@ -58,9 +73,14 @@ CORS(
 
 # Registrar blueprints
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
-app.register_blueprint(users_bp, url_prefix='/api/users')
-app.register_blueprint(walks_bp, url_prefix='/api/walks')
-app.register_blueprint(gamification_bp, url_prefix='/api/gamification')
+# app.register_blueprint(users_bp, url_prefix='/api/users')
+# app.register_blueprint(walks_bp, url_prefix='/api/walks')
+# app.register_blueprint(gamification_bp, url_prefix='/api/gamification')
+
+# app.register_blueprint(auth_bp, url_prefix='/auth')
+app.register_blueprint(users_bp, url_prefix='/users')
+app.register_blueprint(walks_bp, url_prefix='/walks')
+app.register_blueprint(gamification_bp, url_prefix='/gamification')
 
 # --- CONFIGURAÇÃO CORRETA DO BANCO DE DADOS ---
 # Pega as credenciais do arquivo .env

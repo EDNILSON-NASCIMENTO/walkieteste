@@ -87,8 +87,6 @@ const Walk = () => {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true); // Loading dos Pets
-  
-  // AJUSTE 1: Mudei 'loadingLocation' para 'true' para o carregamento inicial
   const [loadingLocation, setLoadingLocation] = useState(true);
 
   const watchId = useRef(null);
@@ -99,7 +97,6 @@ const Walk = () => {
   const totalDistance = useRef(0); // Ref para acumular distância
 
   useEffect(() => {
-    // AJUSTE 2: Função para carregar o mapa na abertura
     const getInitialLocation = () => {
       if (!navigator.geolocation) {
         setError("Geolocalização não suportada.");
@@ -107,35 +104,33 @@ const Walk = () => {
         return;
       }
       
-      // Pede a localização 1 vez, apenas para mostrar o mapa
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           setPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-          setLoadingLocation(false); // Para de carregar
+          setLoadingLocation(false);
         },
         (geoError) => {
           console.error("Erro GPS inicial (onLoad):", geoError);
           setError(`Erro GPS: ${geoError.message}. Verifique permissões.`);
-          setLoadingLocation(false); // Para de carregar mesmo com erro
+          setLoadingLocation(false);
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
       );
     };
 
-    getInitialLocation(); // CHAMA A FUNÇÃO DE LOCALIZAÇÃO INICIAL
-    fetchPets(); // CHAMA SEU FETCHPETS ORIGINAL
+    getInitialLocation();
+    fetchPets();
 
     return () => {
       stopTracking();
       if (intervalId.current) clearInterval(intervalId.current);
     };
-  }, []); // Executa apenas uma vez
+  }, []);
 
   useEffect(() => {
-    // (SEU CÓDIGO ORIGINAL - Perfeito para o timer)
     if (walkState === "active") {
       if (intervalId.current) clearInterval(intervalId.current);
-      intervalId.current = setInterval(updateTimerAndCalories, 1000); // Atualiza timer/calorias
+      intervalId.current = setInterval(updateTimerAndCalories, 1000);
     } else {
       if (intervalId.current) clearInterval(intervalId.current);
       intervalId.current = null;
@@ -145,12 +140,11 @@ const Walk = () => {
     };
   }, [walkState]);
 
-  // (SEU CÓDIGO ORIGINAL - MANTIDO 100% IGUAL)
-  // Esta é a sua função que "com certeza FUNCIONA"
+  // (SEU CÓDIGO ORIGINAL)
   const fetchPets = async () => {
     setError("");
     try {
-      const response = await axios.get("/users/pets"); // URL MANTIDA (sem /api)
+      const response = await axios.get("/users/pets");
       if (Array.isArray(response.data)) {
         setPets(response.data);
       } else {
@@ -209,16 +203,24 @@ const Walk = () => {
     setWalkStats(latestStats);
   };
 
-  // (SEU CÓDIGO ORIGINAL - Perfeito para atualizar a rota)
+  // ====================================================================
+  // FUNÇÃO CORRIGIDA
+  // ====================================================================
   const handlePositionUpdate = (pos) => {
-    if (walkState !== "active") return;
+    // 1. LINHA REMOVIDA:
+    // A verificação 'if (walkState !== "active") return;' foi removida.
+    // Ela causava um bug de "stale closure" que impedia
+    // a função de executar, mantendo a distância em 0.
+    // O rastreamento (watchId) já é parado por stopTracking()
+    // nos estados 'paused' ou 'idle', então esta verificação era
+    // redundante e incorreta.
 
     const newPosition = { lat: pos.coords.latitude, lng: pos.coords.longitude };
     setPosition(newPosition); // Para o marcador
-
-    let lastPosition = null;
+    
     setRoute((prevRoute) => {
-      lastPosition = prevRoute.length > 0 ? prevRoute[prevRoute.length - 1] : null;
+      // Definimos lastPosition aqui, dentro do updater
+      const lastPosition = prevRoute.length > 0 ? prevRoute[prevRoute.length - 1] : null;
       
       if (lastPosition) {
         const distanceIncrement = calculateDistance(
@@ -227,23 +229,40 @@ const Walk = () => {
           newPosition.lat,
           newPosition.lng
         );
-        if (distanceIncrement > 1) {
+        
+        // Limite de 1 metro para evitar ruído do GPS
+        if (distanceIncrement > 1) { 
+          // 2. ATUALIZA A REF (como você já fazia)
           totalDistance.current += distanceIncrement;
           
+          // 3. CALCULA NOVOS VALORES
+          // (Calculamos aqui para atualizar a UI imediatamente)
+          const newDistance = Math.round(totalDistance.current);
+          const newCalories = Math.floor((newDistance / 1000) * 50); // Média de 50kcal/km
+
+          // 4. ATUALIZA O STATE USANDO O UPDATER
+          // (Isso preserva a 'duration' que o timer está atualizando)
           setWalkStats((prevStats) => ({
-            ...prevStats,
-            distance: Math.round(totalDistance.current),
+            ...prevStats, // Mantém a duração atual
+            distance: newDistance,
+            calories: newCalories, // Atualiza as calorias junto
           })); 
           
           return [...prevRoute, newPosition];
         }
       } else {
+        // Este é o primeiro ponto (caso 'startTracking' não tenha definido um)
         return [newPosition];
       }
       
+      // Se distanceIncrement <= 1 (muito pequeno), não faz nada
       return prevRoute;
     });
   };
+  // ====================================================================
+  // FIM DA CORREÇÃO
+  // ====================================================================
+
 
   // (SEU CÓDIGO ORIGINAL)
   const handlePositionError = (geoError) => {
@@ -251,14 +270,12 @@ const Walk = () => {
     setError(`Erro GPS: ${geoError.message}. Verifique permissões/sinal.`);
   };
 
-  // (SEU CÓDIGO ORIGINAL - Ajustado para o loading inicial)
+  // (SEU CÓDIGO ORIGINAL)
   const startTracking = () => {
     if (!navigator.geolocation) {
       setError("Geolocalização não suportada.");
       return;
     }
-    // 'loadingLocation' agora é controlado pelo 'startWalk'
-    // setLoadingLocation(true); 
     setError("");
 
     navigator.geolocation.getCurrentPosition(
@@ -267,13 +284,12 @@ const Walk = () => {
         setPosition(firstPos);
         setRoute([firstPos]);
         
-        // setLoadingLocation(false); // Controlado pelo 'startWalk'
         setLoading(false); // Para o loading do botão "Iniciar"
         
         if (watchId.current) navigator.geolocation.clearWatch(watchId.current);
         
         watchId.current = navigator.geolocation.watchPosition(
-          handlePositionUpdate,
+          handlePositionUpdate, // <- Agora usa a versão correta
           handlePositionError,
           { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );
@@ -283,12 +299,11 @@ const Walk = () => {
         setError(
           `Erro GPS inicial: ${geoError.message}. Verifique permissões.`
         );
-        // setLoadingLocation(false); // Controlado pelo 'startWalk'
         setLoading(false); // Para o loading do botão
         setWalkState("idle");
         setCurrentWalk(null);
       },
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 } // Pede posição "nova"
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
     );
   };
 
@@ -300,8 +315,7 @@ const Walk = () => {
     }
   };
 
-  // (SEU CÓDIGO ORIGINAL - MANTIDO 100% IGUAL)
-  // Usando a "referencia" do fetchPets (rota sem /api)
+  // (SEU CÓDIGO ORIGINAL)
   const startWalk = async () => {
     if (!selectedPet) {
       setError("Selecione um pet para iniciar.");
@@ -312,41 +326,38 @@ const Walk = () => {
     setError("");
     setWalkStats({ duration: 0, distance: 0, calories: 0 });
     setRoute([]);
-    // setPosition(null); // Não reseta a posição para o mapa não piscar
     totalDistance.current = 0;
     pausedTime.current = 0;
-    lastPauseStartTime.current = null; // Reseta refs
+    lastPauseStartTime.current = null;
 
     try {
-      const response = await axios.post("/walks/start", { // URL MANTIDA (sem /api)
+      const response = await axios.post("/walks/start", {
         pet_id: parseInt(selectedPet),
       }); 
       setCurrentWalk(response.data.walk);
       setWalkState("active");
       startTime.current = Date.now();
       
-      // startTracking agora vai parar o 'setLoading(true)'
       startTracking();
     } catch (err) {
       console.error("Error starting walk:", err.response?.data || err.message);
       setError(err.response?.data?.error || "Erro ao iniciar passeio");
       setWalkState("idle");
       setCurrentWalk(null);
-      setLoading(false); // Para o loading se a API falhar
+      setLoading(false);
     }
-    // 'finally' removido pois 'startTracking' agora controla o setLoading(false)
   };
 
-  // (SEU CÓDIGO ORIGINAL - Perfeito)
+  // (SEU CÓDIGO ORIGINAL)
   const pauseWalk = () => {
     if (walkState !== "active") return;
     lastPauseStartTime.current = Date.now();
     setWalkState("paused");
     stopTracking();
-    updateTimerAndCalories(); // Atualiza UI uma última vez ao pausar
+    updateTimerAndCalories();
   };
 
-  // (SEU CÓDIGO ORIGINAL - Perfeito)
+  // (SEU CÓDIGO ORIGINAL)
   const resumeWalk = () => {
     if (walkState !== "paused" || !lastPauseStartTime.current) return;
     pausedTime.current += Date.now() - lastPauseStartTime.current;
@@ -355,8 +366,7 @@ const Walk = () => {
     startTracking();
   };
 
-  // (SEU CÓDIGO ORIGINAL - MANTIDO 100% IGUAL)
-  // Usando a "referencia" do fetchPets (rota sem /api)
+  // (SEU CÓDIGO ORIGINAL)
   const finishWalk = async () => {
     if (!currentWalk || loading) return;
     setLoading(true);
@@ -365,27 +375,29 @@ const Walk = () => {
     if (intervalId.current) clearInterval(intervalId.current);
     intervalId.current = null;
 
-    const finalRoute = route; 
+    // Garante que os stats finais (especialmente a distância) sejam
+    // os valores mais atuais da ref.
     const finalStats = getLatestStats(); 
-    setWalkStats(finalStats);
+    setWalkStats(finalStats); // Atualiza a UI uma última vez
+
+    const finalRoute = route; 
 
     try {
       const payload = {
         route_data: finalRoute.map((p) => ({ lat: p.lat, lng: p.lng })),
-        distance: finalStats.distance,
+        distance: finalStats.distance, // <--- Usa a distância final calculada
         duration: finalStats.duration,
         calories: finalStats.calories,
       };
 
       console.log("Final payload:", payload);
 
-      await axios.put(`/walks/finish/${currentWalk.id}`, payload); // URL MANTIDA (sem /api)
+      await axios.put(`/walks/finish/${currentWalk.id}`, payload);
       console.log("Walk finished backend OK.");
 
       setWalkState("idle");
       setCurrentWalk(null);
       setRoute([]);
-      // setPosition(null); // Não reseta a posição
       setWalkStats({ duration: 0, distance: 0, calories: 0 });
       totalDistance.current = 0;
       startTime.current = null;
@@ -404,7 +416,9 @@ const Walk = () => {
         err.response?.data?.error ||
           "Erro ao finalizar passeio. Verifique o console."
       );
-      setLoading(false); // (Seu código original tinha isso)
+    } finally {
+        // Garante que o loading pare, mesmo se a API falhar
+        setLoading(false);
     }
   };
 
@@ -453,22 +467,18 @@ const Walk = () => {
             <CardContent>
               <div className="h-64 sm:h-80 md:h-96 lg:h-[500px] rounded-md overflow-hidden bg-gray-200 flex items-center justify-center relative">
                 
-                {/* AJUSTE 3: Lógica de loading/placeholder atualizada */}
-                
-                {/* Mostra loading SE (loadingLocation E (estado idle OU (estado active E sem posição))) */}
                 {(loadingLocation && (walkState === "idle" || (walkState === "active" && !position))) && (
                   <div className="absolute inset-0 bg-gray-200 bg-opacity-80 flex items-center justify-center z-10">
                     <div className="text-center text-gray-600 p-4 rounded bg-white shadow">
                       {" "}
                       <Loader2 className="w-8 h-8 mx-auto animate-spin mb-2" />{" "}
-                      {loadingLocation && walkState === "idle" // Apenas na abertura
-                        ? "Obtendo localização..."
+                      {loadingLocation && walkState === "idle"
+                        ? "Obtindo localização..."
                         : "Aguardando GPS..."}
                     </div>
                   </div>
                 )}
                 
-                {/* Mostra placeholder SE (NÃO está carregando E não tem posição E está idle) */}
                 {!loadingLocation && !position && walkState === "idle" && (
                   <div className="text-center text-gray-500 px-4">
                     {" "}
@@ -478,7 +488,6 @@ const Walk = () => {
                   </div>
                 )}
                 
-                {/* Mostra o mapa SE (temos uma posição) */}
                 {position && (
                   <MapContainer
                     center={[position.lat, position.lng]}
@@ -510,8 +519,6 @@ const Walk = () => {
         </div>
 
         <div className="space-y-4 md:space-y-6">
-          {/* (SEU CÓDIGO ORIGINAL - MANTIDO 100% IGUAL) */}
-          {/* Este bloco não foi alterado, como pedido. */}
           {walkState === "idle" && (
             <Card>
               <CardHeader className="pb-3">
@@ -560,7 +567,6 @@ const Walk = () => {
             </Card>
           )}
 
-          {/* (SEU CÓDIGO ORIGINAL - MANTIDO 100% IGUAL) */}
           <Card>
             <CardHeader className="pb-3">
               {" "}
@@ -571,24 +577,23 @@ const Walk = () => {
                 <Button
                   onClick={startWalk}
                   disabled={
-                    loading || // Loading dos Pets OU do 'startWalk'
-                    loadingLocation || // Loading do GPS na abertura
+                    loading ||
+                    loadingLocation ||
                     !selectedPet ||
                     pets.length === 0
                   }
                   className="w-full text-lg py-3 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600"
                 >
-                  {/* AJUSTE: Lógica de loading do botão */}
-                  {loading ? ( // Se 'startWalk' está ativo
+                  {loading ? (
                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  ) : loadingLocation ? ( // Se GPS inicial está carregando
+                  ) : loadingLocation ? (
                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                   ) : (
                     <Play className="w-5 h-5 mr-2" />
                   )}
-                  {loading && !loadingLocation // 'startWalk' ou 'fetchPets'
+                  {loading && !loadingLocation
                     ? "Aguarde..."
-                    : loadingLocation // GPS inicial
+                    : loadingLocation
                     ? "Carregando GPS..."
                     : "Iniciar Passeio"}
                 </Button>
@@ -645,7 +650,6 @@ const Walk = () => {
             </CardContent>
           </Card>
 
-          {/* (SEU CÓDIGO ORIGINAL - MANTIDO 100% IGUAL) */}
           {(walkState !== "idle" || !loading) && (
             <Card>
               <CardHeader className="pb-3">
@@ -677,7 +681,6 @@ const Walk = () => {
             </Card>
           )}
 
-          {/* (SEU CÓDIGO ORIGINAL - MANTIDO 100% IGUAL) */}
           {walkState !== "idle" && (
             <Card>
               <CardContent className="pt-6">
@@ -698,4 +701,3 @@ const Walk = () => {
 };
 
 export default Walk;
-

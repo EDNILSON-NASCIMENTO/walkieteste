@@ -26,7 +26,7 @@ const Dashboard = () => {
         // *** CORREÇÃO AQUI ***
         // Removemos a verificação manual do token e o objeto 'config'.
         // O AuthContext já configurou o 'axios' globalmente.
-        const response = await axios.get('/api/users/dashboard'); 
+        const response = await axios.get('/users/dashboard'); 
         // *** FIM DA CORREÇÃO ***
         
         setDashboardData(response.data);
