@@ -16,6 +16,10 @@ import {
   AlertTriangle
 } from 'lucide-react';
 
+// Importa o componente Alert e AlertDescription
+import { Alert, AlertDescription } from '@/components/ui/alert';
+
+
 const Ranking = () => {
   const [rankingData, setRankingData] = useState({ ranking: [], current_user_position: null });
   const [badges, setBadges] = useState([]);
@@ -31,8 +35,11 @@ const Ranking = () => {
       return imagePath;
     }
 
-    const baseUrlWithoutApi = axios.defaults.baseURL.replace('/api', '');
-    const fullUrl = `${baseUrlWithoutApi.replace(/\/$/, '')}/${imagePath.replace(/^\//, '')}`;
+    // Adaptação para garantir que a baseURL seja usada corretamente.
+    // Esta parte pode precisar de ajuste dependendo de como `axios.defaults.baseURL` é configurado na sua aplicação.
+    // Exemplo: se axios.defaults.baseURL for "http://localhost:8000/api", ele deve resultar em "http://localhost:8000"
+    const baseUrl = axios.defaults.baseURL ? new URL(axios.defaults.baseURL).origin : '';
+    const fullUrl = `${baseUrl.replace(/\/$/, '')}/${imagePath.replace(/^\//, '')}`;
     return fullUrl;
   };
 
@@ -90,7 +97,7 @@ const Ranking = () => {
 
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 sm:p-6"> {/* Adiciona um padding geral */}
       {/* Header Responsivo */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
         <div>
@@ -101,26 +108,32 @@ const Ranking = () => {
 
        {/* Loading/Error */}
        {loading && ( <div className="flex items-center justify-center h-64"> <Loader2 className="h-12 w-12 animate-spin text-blue-500" /> </div> )}
-       {error && !loading && ( <Alert variant="destructive"> <AlertTriangle className="h-4 w-4" /> <AlertDescription>{error}</AlertDescription> </Alert> )}
+       {error && !loading && (
+         // Certifique-se de que `Alert` e `AlertDescription` estão importados
+         <Alert variant="destructive">
+           <AlertTriangle className="h-4 w-4" />
+           <AlertDescription>{error}</AlertDescription>
+         </Alert>
+       )}
 
       {!loading && !error && (
-          <Tabs defaultValue="ranking" className="space-y-4 md:space-y-6">
+          <Tabs defaultValue="ranking" className="space-y-4 md:space-y-6 w-full"> {/* Adicionado w-full */}
             <TabsList className="grid w-full grid-cols-3 h-auto">
-              {/* --- CORREÇÃO 1: BREAKPOINTS --- (removido 'xxs:') */}
-              <TabsTrigger value="ranking" className="py-2 text-xs sm:text-base">Ranking</TabsTrigger>
-              <TabsTrigger value="badges" className="py-2 text-xs sm:text-base">Badges</TabsTrigger>
-              <TabsTrigger value="challenges" className="py-2 text-xs sm:text-base">Desafios</TabsTrigger>
+              <TabsTrigger value="ranking" className="py-2 text-xs sm:text-sm">Ranking</TabsTrigger> {/* Ajustado para sm:text-sm */}
+              <TabsTrigger value="badges" className="py-2 text-xs sm:text-sm">Badges</TabsTrigger> {/* Ajustado para sm:text-sm */}
+              <TabsTrigger value="challenges" className="py-2 text-xs sm:text-sm">Desafios</TabsTrigger> {/* Ajustado para sm:text-sm */}
             </TabsList>
 
             {/* Aba Ranking */}
-            <TabsContent value="ranking" className="space-y-4 md:space-y-6">
+            <TabsContent value="ranking" className="space-y-4 md:space-y-6 w-full"> {/* Adicionado w-full */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <h2 className="text-lg sm:text-xl font-semibold flex-shrink-0">Classificação de Pontos</h2>
-                {/* --- CORREÇÃO 1: BREAKPOINTS --- (removido 'xxs:') */}
-                <div className="flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-1 w-full sm:w-auto">
-                  <Button variant={selectedPeriod === 'weekly' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedPeriod('weekly')} className="w-full sm:w-auto text-xs sm:text-sm"> Semanal </Button>
-                  <Button variant={selectedPeriod === 'monthly' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedPeriod('monthly')} className="w-full sm:w-auto text-xs sm:text-sm"> Mensal </Button>
-                  <Button variant={selectedPeriod === 'all_time' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedPeriod('all_time')} className="w-full sm:w-auto text-xs sm:text-sm"> Geral </Button>
+                {/* --- MUDANÇA SIGNIFICATIVA AQUI: flex-wrap para melhor responsividade dos botões --- */}
+                {/* Removido flex-col para evitar empilhamento desnecessário em telas pequenas se houver espaço */}
+                <div className="flex flex-wrap gap-1 w-full sm:w-auto">
+                  <Button variant={selectedPeriod === 'weekly' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedPeriod('weekly')} className="flex-grow sm:flex-none text-xs sm:text-sm"> Semanal </Button>
+                  <Button variant={selectedPeriod === 'monthly' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedPeriod('monthly')} className="flex-grow sm:flex-none text-xs sm:text-sm"> Mensal </Button>
+                  <Button variant={selectedPeriod === 'all_time' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedPeriod('all_time')} className="flex-grow sm:flex-none text-xs sm:text-sm"> Geral </Button>
                 </div>
               </div>
               <Card>
@@ -137,23 +150,16 @@ const Ranking = () => {
                         <div key={user.user_id} className={`flex items-center justify-between p-2 sm:p-3 rounded-lg border ${ user.is_current_user ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-100' }`}>
                           
                           {/* ================ AJUSTE 1 (SAFARI FIX) ================ */}
-                          {/* (Mantido) 'overflow-hidden' é crucial para Safari */}
                           <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1 overflow-hidden">
                           {/* ======================================================== */}
 
                             {getRankIcon(user.position)}
                             <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center overflow-hidden border">
-                              {/* Usa a função corrigida */}
                               {user.profile_picture ? (
-                                <img src={getImageUrl(user.profile_picture)} alt={user.name} className="w-full h-full object-cover" key={getImageUrl(user.profile_picture)} onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display='flex'; }} />
+                                <img src={getImageUrl(user.profile_picture)} alt={user.name} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src='/fallback-profile.png'; e.currentTarget.className="w-4 h-4 sm:w-5 sm:h-5 text-white"; }} />
                               ) : ( <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" /> )}
-                               {/* Fallback caso onError precise */}
-                               <div style={{display: 'none'}} className="w-full h-full items-center justify-center hidden">
-                                   <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                               </div>
                             </div>
                             <div className="flex-1 min-w-0">
-                              {/* --- CORREÇÃO 1: BREAKPOINTS --- (removido 'xxs:') */}
                               <p className="font-medium text-xs sm:text-base truncate">
                                 {user.name}
                                 {user.is_current_user && (<Badge variant="secondary" className="ml-1 sm:ml-2 text-xs px-1 sm:px-2">Você</Badge>)}
@@ -162,7 +168,6 @@ const Ranking = () => {
                           </div>
                           <div className="text-right ml-2 flex-shrink-0">
                             <p className="font-bold text-sm sm:text-base text-blue-600">{user.points || 0}</p>
-                            {/* --- CORREÇÃO 1: BREAKPOINTS --- (substituído 'xxs:block' por 'sm:block') */}
                             <p className="text-xs text-gray-600 hidden sm:block">pontos</p>
 
                           </div>
@@ -178,7 +183,6 @@ const Ranking = () => {
                                {/* --- CORREÇÃO 2: LAYOUT BADGE 'VOCÊ' --- */}
                                {/* Adicionado 'flex items-center' para alinhar o badge ao lado do texto */}
                                <div className="flex items-center space-x-1.5">
-                                 {/* --- CORREÇÃO 1: BREAKPOINTS --- (removido 'xxs:') */}
                                  <p className="font-medium text-xs sm:text-base">Sua posição</p>
                                  <Badge variant="secondary" className="text-xs px-1 sm:px-2">Você</Badge>
                                </div>
@@ -195,12 +199,11 @@ const Ranking = () => {
             </TabsContent>
 
             {/* Aba Badges */}
-            <TabsContent value="badges" className="space-y-4 md:space-y-6">
+            <TabsContent value="badges" className="space-y-4 md:space-y-6 w-full"> {/* Adicionado w-full */}
               <Card>
                 <CardHeader className="pb-3 sm:pb-4"><CardTitle className="flex items-center text-base sm:text-lg"><Award className="w-4 h-4 sm:w-5 sm:h-5 mr-2" /> Minhas Conquistas</CardTitle></CardHeader>
                 <CardContent>
                   {Array.isArray(badges) && badges.length > 0 ? (
-                    // --- CORREÇÃO 1: BREAKPOINTS --- (substituído 'xs:' por 'sm:')
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                       {badges.map((badge) => (
                         <div key={badge.id} className={`p-3 sm:p-4 rounded-lg border text-center ${ badge.earned ? 'bg-yellow-50 border-yellow-200' : 'bg-gray-50 border-gray-200 opacity-70' }`}>
@@ -220,7 +223,7 @@ const Ranking = () => {
             </TabsContent>
 
             {/* Aba Desafios */}
-            <TabsContent value="challenges" className="space-y-4 md:space-y-6">
+            <TabsContent value="challenges" className="space-y-4 md:space-y-6 w-full"> {/* Adicionado w-full */}
               <Card>
                 <CardHeader className="pb-3 sm:pb-4"><CardTitle className="flex items-center text-base sm:text-lg"><Target className="w-4 h-4 sm:w-5 sm:h-5 mr-2" /> Desafios Ativos</CardTitle></CardHeader>
                 <CardContent>
@@ -231,7 +234,6 @@ const Ranking = () => {
                               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3">
                                 
                                 {/* ================ AJUSTE 2 (SAFARI FIX) ================ */}
-                                {/* (Mantido) 'overflow-hidden' é crucial para Safari */}
                                 <div className="flex-1 min-w-0 w-full overflow-hidden">
                                 {/* ======================================================== */}
 
