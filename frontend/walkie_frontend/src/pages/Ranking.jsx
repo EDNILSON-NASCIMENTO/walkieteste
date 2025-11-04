@@ -24,7 +24,6 @@ const Ranking = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('all_time');
   const [error, setError] = useState('');
 
-  // --- FUNÇÃO getImageUrl CORRIGIDA (Frontend Fix) ---
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
 
@@ -36,7 +35,6 @@ const Ranking = () => {
     const fullUrl = `${baseUrlWithoutApi.replace(/\/$/, '')}/${imagePath.replace(/^\//, '')}`;
     return fullUrl;
   };
-  // --- FIM DA FUNÇÃO ---
 
 
   useEffect(() => {
@@ -108,19 +106,21 @@ const Ranking = () => {
       {!loading && !error && (
           <Tabs defaultValue="ranking" className="space-y-4 md:space-y-6">
             <TabsList className="grid w-full grid-cols-3 h-auto">
-              <TabsTrigger value="ranking" className="py-2 text-xs xxs:text-sm sm:text-base">Ranking</TabsTrigger>
-              <TabsTrigger value="badges" className="py-2 text-xs xxs:text-sm sm:text-base">Badges</TabsTrigger>
-              <TabsTrigger value="challenges" className="py-2 text-xs xxs:text-sm sm:text-base">Desafios</TabsTrigger>
+              {/* --- CORREÇÃO 1: BREAKPOINTS --- (removido 'xxs:') */}
+              <TabsTrigger value="ranking" className="py-2 text-xs sm:text-base">Ranking</TabsTrigger>
+              <TabsTrigger value="badges" className="py-2 text-xs sm:text-base">Badges</TabsTrigger>
+              <TabsTrigger value="challenges" className="py-2 text-xs sm:text-base">Desafios</TabsTrigger>
             </TabsList>
 
             {/* Aba Ranking */}
             <TabsContent value="ranking" className="space-y-4 md:space-y-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <h2 className="text-lg sm:text-xl font-semibold flex-shrink-0">Classificação de Pontos</h2>
-                <div className="flex flex-col xxs:flex-row space-y-1 xxs:space-y-0 xxs:space-x-1 w-full sm:w-auto">
-                  <Button variant={selectedPeriod === 'weekly' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedPeriod('weekly')} className="w-full xxs:w-auto text-xs xxs:text-sm"> Semanal </Button>
-                  <Button variant={selectedPeriod === 'monthly' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedPeriod('monthly')} className="w-full xxs:w-auto text-xs xxs:text-sm"> Mensal </Button>
-                  <Button variant={selectedPeriod === 'all_time' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedPeriod('all_time')} className="w-full xxs:w-auto text-xs xxs:text-sm"> Geral </Button>
+                {/* --- CORREÇÃO 1: BREAKPOINTS --- (removido 'xxs:') */}
+                <div className="flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-1 w-full sm:w-auto">
+                  <Button variant={selectedPeriod === 'weekly' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedPeriod('weekly')} className="w-full sm:w-auto text-xs sm:text-sm"> Semanal </Button>
+                  <Button variant={selectedPeriod === 'monthly' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedPeriod('monthly')} className="w-full sm:w-auto text-xs sm:text-sm"> Mensal </Button>
+                  <Button variant={selectedPeriod === 'all_time' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedPeriod('all_time')} className="w-full sm:w-auto text-xs sm:text-sm"> Geral </Button>
                 </div>
               </div>
               <Card>
@@ -137,8 +137,7 @@ const Ranking = () => {
                         <div key={user.user_id} className={`flex items-center justify-between p-2 sm:p-3 rounded-lg border ${ user.is_current_user ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-100' }`}>
                           
                           {/* ================ AJUSTE 1 (SAFARI FIX) ================ */}
-                          {/* Adicionamos 'overflow-hidden' para forçar o Safari */}
-                          {/* a respeitar o 'flex-1' e 'min-w-0' */}
+                          {/* (Mantido) 'overflow-hidden' é crucial para Safari */}
                           <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1 overflow-hidden">
                           {/* ======================================================== */}
 
@@ -154,7 +153,8 @@ const Ranking = () => {
                                </div>
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="font-medium text-xs xxs:text-sm sm:text-base truncate">
+                              {/* --- CORREÇÃO 1: BREAKPOINTS --- (removido 'xxs:') */}
+                              <p className="font-medium text-xs sm:text-base truncate">
                                 {user.name}
                                 {user.is_current_user && (<Badge variant="secondary" className="ml-1 sm:ml-2 text-xs px-1 sm:px-2">Você</Badge>)}
                               </p>
@@ -162,7 +162,8 @@ const Ranking = () => {
                           </div>
                           <div className="text-right ml-2 flex-shrink-0">
                             <p className="font-bold text-sm sm:text-base text-blue-600">{user.points || 0}</p>
-                            <p className="text-xs text-gray-600 hidden xxs:block">pontos</p>
+                            {/* --- CORREÇÃO 1: BREAKPOINTS --- (substituído 'xxs:block' por 'sm:block') */}
+                            <p className="text-xs text-gray-600 hidden sm:block">pontos</p>
 
                           </div>
                         </div>
@@ -174,7 +175,13 @@ const Ranking = () => {
                                 <div className="flex-shrink-0 flex items-center justify-center w-6 sm:w-8 h-6 sm:h-8">
                                    <span className="text-xs sm:text-sm font-bold text-gray-600">#{rankingData.current_user_position}</span>
                                 </div>
-                               <div><p className="font-medium text-xs xxs:text-sm sm:text-base">Sua posição</p><Badge variant="secondary" className="text-xs px-1 sm:px-2">Você</Badge></div>
+                               {/* --- CORREÇÃO 2: LAYOUT BADGE 'VOCÊ' --- */}
+                               {/* Adicionado 'flex items-center' para alinhar o badge ao lado do texto */}
+                               <div className="flex items-center space-x-1.5">
+                                 {/* --- CORREÇÃO 1: BREAKPOINTS --- (removido 'xxs:') */}
+                                 <p className="font-medium text-xs sm:text-base">Sua posição</p>
+                                 <Badge variant="secondary" className="text-xs px-1 sm:px-2">Você</Badge>
+                               </div>
                              </div>
                            </div>
                          </div>
@@ -193,7 +200,8 @@ const Ranking = () => {
                 <CardHeader className="pb-3 sm:pb-4"><CardTitle className="flex items-center text-base sm:text-lg"><Award className="w-4 h-4 sm:w-5 sm:h-5 mr-2" /> Minhas Conquistas</CardTitle></CardHeader>
                 <CardContent>
                   {Array.isArray(badges) && badges.length > 0 ? (
-                    <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                    // --- CORREÇÃO 1: BREAKPOINTS --- (substituído 'xs:' por 'sm:')
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                       {badges.map((badge) => (
                         <div key={badge.id} className={`p-3 sm:p-4 rounded-lg border text-center ${ badge.earned ? 'bg-yellow-50 border-yellow-200' : 'bg-gray-50 border-gray-200 opacity-70' }`}>
                           <div className="flex justify-center mb-2">{getBadgeIcon(badge.earned)}</div>
@@ -223,7 +231,7 @@ const Ranking = () => {
                               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3">
                                 
                                 {/* ================ AJUSTE 2 (SAFARI FIX) ================ */}
-                                {/* Adicionamos 'overflow-hidden' aqui também */}
+                                {/* (Mantido) 'overflow-hidden' é crucial para Safari */}
                                 <div className="flex-1 min-w-0 w-full overflow-hidden">
                                 {/* ======================================================== */}
 
