@@ -116,11 +116,12 @@ const Ranking = () => {
             <TabsContent value="ranking" className="space-y-4 md:space-y-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <h2 className="text-lg sm:text-xl font-semibold flex-shrink-0">Classificação de Pontos</h2>
-                {/* --- CORREÇÃO 1: BREAKPOINTS --- (removido 'xxs:') */}
-                <div className="flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-1 w-full sm:w-auto">
-                  <Button variant={selectedPeriod === 'weekly' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedPeriod('weekly')} className="w-full sm:w-auto text-xs sm:text-sm"> Semanal </Button>
-                  <Button variant={selectedPeriod === 'monthly' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedPeriod('monthly')} className="w-full sm:w-auto text-xs sm:text-sm"> Mensal </Button>
-                  <Button variant={selectedPeriod === 'all_time' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedPeriod('all_time')} className="w-full sm:w-auto text-xs sm:text-sm"> Geral </Button>
+                {/* --- MUDANÇA SIGNIFICATIVA AQUI: flex-wrap para melhor responsividade dos botões --- */}
+                {/* Removido flex-col para evitar empilhamento desnecessário em telas pequenas se houver espaço */}
+                <div className="flex flex-wrap gap-1 w-full sm:w-auto">
+                  <Button variant={selectedPeriod === 'weekly' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedPeriod('weekly')} className="flex-grow sm:flex-none text-xs sm:text-sm"> Semanal </Button>
+                  <Button variant={selectedPeriod === 'monthly' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedPeriod('monthly')} className="flex-grow sm:flex-none text-xs sm:text-sm"> Mensal </Button>
+                  <Button variant={selectedPeriod === 'all_time' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedPeriod('all_time')} className="flex-grow sm:flex-none text-xs sm:text-sm"> Geral </Button>
                 </div>
               </div>
               <Card>
