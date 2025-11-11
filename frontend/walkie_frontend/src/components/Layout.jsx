@@ -1,21 +1,22 @@
-// src/components/Layout.jsx (Corrigido)
-
-import React, { useState } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import React, { useState } from "react";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   Home,
   User,
   MapPin,
   Trophy,
-  Heart, // <-- Mantido, pois é usado no item 'Pets'
+  Heart,
   LogOut,
   Menu,
-  X
-} from 'lucide-react';
-import logo from '@/assets/LOGO-PRPL.png'; // 1. IMPORTAR O LOGO
+  X,
+  Users, // ÍCONE NOVO
+  Dog, // ÍCONE NOVO (ou Cat)
+  Timer, // ÍCONE NOVO
+} from "lucide-react";
+import logo from "@/assets/LOGO-PRPL.png"; // 1. IMPORTAR O LOGO
 
 const Layout = () => {
   const { user, logout } = useAuth();
@@ -25,29 +26,57 @@ const Layout = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate("/login");
   };
 
   const navItems = [
-    { path: '/dashboard', icon: Home, label: 'Dashboard' },
-    { path: '/profile', icon: User, label: 'Perfil' },
-    { path: '/pets', icon: Heart, label: 'Pets' },
-    { path: '/walk', icon: MapPin, label: 'Passeio' },
-    { path: '/ranking', icon: Trophy, label: 'Ranking' }
+    { path: "/dashboard", icon: Home, label: "Dashboard" },
+    { path: "/profile", icon: User, label: "Perfil" },
+    { path: "/pets", icon: Heart, label: "Pets" },
+    { path: "/walk", icon: MapPin, label: "Passeio" },
+    { path: "/ranking", icon: Trophy, label: "Ranking" },
   ];
+
+  // LÓGICA ADICIONADA
+  // Adiciona links de admin se o usuário tiver a role 'admin'
+  if (user && user.role === "admin") {
+    navItems.push(
+      {
+        path: "/admin/users",
+        icon: Users,
+        label: "Admin - Usuários",
+        admin: true,
+      },
+      { path: "/admin/pets", icon: Dog, label: "Admin - Pets", admin: true },
+      {
+        path: "/admin/walks",
+        icon: Timer,
+        label: "Admin - Passeios",
+        admin: true,
+      }
+    );
+  }
 
   const NavLink = ({ item, onClick }) => {
     const Icon = item.icon;
-    const isActive = location.pathname === item.path;
+    const isActive = location.pathname.startsWith(item.path);
+
+    // Define a classe de destaque para admin
+    const adminClass = item.admin
+      ? "text-red-700 hover:bg-red-50"
+      : "text-gray-600 hover:bg-gray-100";
+
+    const activeClass = isActive
+      ? "bg-gradient-to-r from-blue-500 to-green-500 text-white"
+      : adminClass;
+
     return (
       <li key={item.path}>
         <Link
           to={item.path}
           onClick={onClick}
           className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-            isActive
-              ? 'bg-gradient-to-r from-blue-500 to-green-500 text-white'
-              : 'text-gray-600 hover:bg-gray-100'
+            isActive ? activeClass : adminClass
           }`}
         >
           <Icon className="w-5 h-5" />
@@ -67,37 +96,49 @@ const Layout = () => {
             <div className="flex items-center">
               {/* Mobile Menu Button - shown only on small screens */}
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-                
                 <SheetTrigger asChild className="md:hidden mr-4">
                   <Button variant="ghost" size="icon">
-                    <span> 
+                    <span>
                       <Menu className="w-6 h-6" />
                       <span className="sr-only">Abrir menu</span>
                     </span>
                   </Button>
                 </SheetTrigger>
-                
-                <SheetContent side="left" className="w-64 p-4"> {/* Mobile Sidebar */}
-                   <div className="flex justify-between items-center mb-6">
-                     
-                     {/* 2. LOGO PADRONIZADO (Mobile Menu) */}
-                     <Link to="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center">
-                       {/* Substituí o ícone e o texto pelo seu logo */}
-                       <img src={logo} alt="Walkie Logo" className="h-8" /> 
-                     </Link>
 
-                      <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(false)}>
-                        <X className="w-6 h-6" />
-                        <span className="sr-only">Fechar menu</span>
-                      </Button>
-                   </div>
-                   <nav>
+                <SheetContent side="left" className="w-64 p-4">
+                  {" "}
+                  {/* Mobile Sidebar */}
+                  <div className="flex justify-between items-center mb-6">
+                    {/* 2. LOGO PADRONIZADO (Mobile Menu) */}
+                    <Link
+                      to="/dashboard"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center"
+                    >
+                      {/* Substituí o ícone e o texto pelo seu logo */}
+                      <img src={logo} alt="Walkie Logo" className="h-8" />
+                    </Link>
+
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <X className="w-6 h-6" />
+                      <span className="sr-only">Fechar menu</span>
+                    </Button>
+                  </div>
+                  <nav>
                     <ul className="space-y-2">
                       {navItems.map((item) => (
-                        <NavLink key={item.path} item={item} onClick={() => setIsMobileMenuOpen(false)} />
+                        <NavLink
+                          key={item.path}
+                          item={item}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        />
                       ))}
                     </ul>
-                   </nav>
+                  </nav>
                 </SheetContent>
               </Sheet>
 
@@ -110,7 +151,9 @@ const Layout = () => {
 
             {/* Right side: User info and Logout */}
             <div className="flex items-center space-x-2 sm:space-x-4">
-              <span className="hidden sm:inline text-sm text-gray-600">Olá, {user?.name}</span>
+              <span className="hidden sm:inline text-sm text-gray-600">
+                Olá, {user?.name}
+              </span>
               <Button
                 variant="ghost"
                 size="icon"
@@ -118,7 +161,7 @@ const Layout = () => {
                 className="text-gray-600 hover:text-gray-900"
               >
                 <LogOut className="w-5 h-5" />
-                 <span className="sr-only">Sair</span>
+                <span className="sr-only">Sair</span>
               </Button>
             </div>
           </div>
@@ -131,7 +174,7 @@ const Layout = () => {
           <div className="p-4">
             <ul className="space-y-2">
               {navItems.map((item) => (
-                 <NavLink key={item.path} item={item} />
+                <NavLink key={item.path} item={item} />
               ))}
             </ul>
           </div>

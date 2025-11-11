@@ -1,3 +1,6 @@
+# Em: backend/walkie_backend/src/models/models.py
+# (Arquivo ajustado)
+
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -14,6 +17,9 @@ class User(db.Model):
     profile_picture = db.Column(db.String(255), nullable=True)
     total_points = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # ⬇️ NOVO CAMPO ADICIONADO ⬇️
+    role = db.Column(db.String(10), default='user', nullable=False) # 'user' ou 'admin'
     
     # Relacionamentos
     pets = db.relationship('Pet', backref='owner', lazy=True, cascade='all, delete-orphan')
@@ -33,7 +39,8 @@ class User(db.Model):
             'name': self.name,
             'profile_picture': self.profile_picture,
             'total_points': self.total_points,
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'role': self.role  # ⬅️ CAMPO ADICIONADO AO to_dict()
         }
 
 class Pet(db.Model):
@@ -171,4 +178,3 @@ class Ranking(db.Model):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'user': self.user.to_dict() if self.user else None
         }
-

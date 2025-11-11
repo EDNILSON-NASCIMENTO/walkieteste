@@ -1,3 +1,6 @@
+# Em: backend/walkie_backend/src/main.py
+# (Arquivo ajustado)
+
 import os
 import sys
 # --- INÍCIO DA CORREÇÃO ---
@@ -23,6 +26,8 @@ from src.routes.auth import auth_bp
 from src.routes.users import users_bp
 from src.routes.walks import walks_bp
 from src.routes.gamification import gamification_bp
+# ⬇️ NOVO IMPORT ⬇️
+from src.routes.admin import admin_bp 
 
 # Carrega as variáveis de ambiente do arquivo .env
 # Esta linha é redundante por causa da linha 4, mas não causa problema.
@@ -77,6 +82,8 @@ app.register_blueprint(auth_bp, url_prefix='/api/auth') # <-- CORRIGIDO
 app.register_blueprint(users_bp, url_prefix='/api/users')
 app.register_blueprint(walks_bp, url_prefix='/api/walks')
 app.register_blueprint(gamification_bp, url_prefix='/api/gamification')
+# ⬇️ NOVO REGISTRO ⬇️
+app.register_blueprint(admin_bp, url_prefix='/api/admin') 
 
 
 #Blueprint para testes
